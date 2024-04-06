@@ -8,3 +8,7 @@ pub mod netc;
 pub mod socket;
 pub mod traits;
 pub mod utils;
+
+// re-export
+pub type SocketAddr = embedded_nal::SocketAddr;
+pub type TlsError = embedded_tls::TlsError;
