@@ -34,14 +34,23 @@ impl ToSockaddr for SocketAddrV4 {
     }
 }
 
+pub trait ToIpAddr {
+    fn to_ip_addr(&self) -> Ipv4Addr;
+}
+
+impl ToIpAddr for in_addr {
+    fn to_ip_addr(&self) -> Ipv4Addr {
+        let octets = self.0.to_be_bytes();
+        Ipv4Addr::new(octets[0], octets[1], octets[2], octets[3])
+    }
+}
+
 pub trait ToSocketAddr {
     fn to_socket_addr(&self) -> SocketAddr;
 }
 
 impl ToSocketAddr for in_addr {
     fn to_socket_addr(&self) -> SocketAddr {
-        let octets = self.0.to_be_bytes();
-        let ip = Ipv4Addr::new(octets[0], octets[1], octets[2], octets[3]);
-        SocketAddr::V4(SocketAddrV4::new(ip, 0))
+        SocketAddr::new(self.to_ip_addr().into(), 0)
     }
 }

@@ -1,19 +1,21 @@
 use alloc::{
     borrow::ToOwned,
     string::{String, ToString},
-    vec as a_vec,
+    vec::{self as a_vec},
 };
-use dns_protocol::{Flags, Question, ResourceRecord};
+use dns_protocol::{Flags, Label, Question, ResourceRecord};
 use embedded_io::{Read, Write};
 use embedded_nal::{IpAddr, Ipv4Addr, SocketAddr};
 use psp::sys::in_addr;
 
-use crate::socket::udp::UdpSocketState;
+use crate::socket::{udp::UdpSocketState, ToIpAddr, ToSocketAddr};
 
-use super::{
-    socket::{udp::UdpSocket, ToSocketAddr},
-    traits,
-};
+use self::error::DnsError;
+
+use super::{socket::udp::UdpSocket, traits};
+
+pub mod error;
+mod types;
 
 pub const DNS_PORT: u16 = 53;
 lazy_static::lazy_static! {
@@ -26,15 +28,11 @@ pub fn create_a_type_query(domain: &str) -> Question {
     Question::new(domain, dns_protocol::ResourceType::A, 1)
 }
 
-/// An error that can occur when using a DNS resolver
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum DnsError {
-    /// The DNS resolver failed to create
-    FailedToCreate,
-    /// The hostname could not be resolved
-    HostnameResolutionFailed(String),
-    /// The IP address could not be resolved
-    AddressResolutionFailed(String),
+pub fn create_ptr_type_query<'a>(ip: &'a str) -> Question<'a> {
+    // let ip_v4_addr = Ipv4Addr::from(ip.0.to_be_bytes());
+    // let label = Label::from(ip_v4_addr.to_string().as_str());
+    let label = Label::from(ip);
+    Question::new(label, dns_protocol::ResourceType::Ptr, 1)
 }
 
 /// A DNS resolver
@@ -67,6 +65,15 @@ impl DnsResolver {
         Ok(DnsResolver { udp_socket, dns })
     }
 
+    fn connect_if_not_already(&mut self) -> Result<(), DnsError> {
+        if self.udp_socket.get_socket_state() != UdpSocketState::Connected {
+            self.udp_socket
+                .connect(self.dns)
+                .map_err(|e| DnsError::HostnameResolutionFailed(e.to_string()))?;
+        }
+        Ok(())
+    }
+
     /// Resolve a hostname to an IP address
     ///
     /// # Parameters
@@ -75,13 +82,8 @@ impl DnsResolver {
     /// # Returns
     /// - `Ok(in_addr)`: The IP address of the hostname
     /// - `Err(())`: If the hostname could not be resolved
-    pub fn resolve(&mut self, host: &str) -> Result<in_addr, DnsError> {
-        // connect to the DNS server, if not already
-        if self.udp_socket.get_socket_state() != UdpSocketState::Connected {
-            self.udp_socket
-                .connect(self.dns)
-                .map_err(|e| DnsError::HostnameResolutionFailed(e.to_string()))?;
-        }
+    pub fn resolve_hostname(&mut self, host: &str) -> Result<in_addr, DnsError> {
+        self.connect_if_not_already()?;
 
         // create a new query
         let mut questions = [super::dns::create_a_type_query(host)];
@@ -153,13 +155,23 @@ impl DnsResolver {
             )),
         }
     }
+
+    fn resolve_addr(&mut self, addr: in_addr) -> Result<String, DnsError> {
+        self.connect_if_not_already()?;
+
+        let ip = addr.to_ip_addr().to_string();
+        let query = create_ptr_type_query(&ip);
+
+        todo!("resolve_addr")
+    }
 }
 
 impl traits::dns::ResolveHostname for DnsResolver {
     type Error = DnsError;
 
     fn resolve_hostname(&mut self, hostname: &str) -> Result<SocketAddr, DnsError> {
-        self.resolve(hostname).map(|addr| addr.to_socket_addr())
+        self.resolve_hostname(hostname)
+            .map(|addr| addr.to_socket_addr())
     }
 }
 
