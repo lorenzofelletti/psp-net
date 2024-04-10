@@ -1,39 +1,27 @@
 use alloc::{
     borrow::ToOwned,
     string::{String, ToString},
-    vec::{self as a_vec},
+    vec,
 };
-use dns_protocol::{Flags, Label, Question, ResourceRecord};
+use dns_protocol::{Flags, ResourceRecord};
 use embedded_io::{Read, Write};
-use embedded_nal::{IpAddr, Ipv4Addr, SocketAddr};
+use embedded_nal::SocketAddr;
 use psp::sys::in_addr;
 
-use crate::socket::{udp::UdpSocketState, ToIpAddr, ToSocketAddr};
+use crate::{
+    dns::utils::create_ptr_type_query,
+    socket::{udp::UdpSocketState, ToIpAddr, ToSocketAddr},
+};
 
-use self::error::DnsError;
+use self::{
+    error::DnsError,
+    utils::{create_a_type_query, GOOGLE_DNS_HOST},
+};
 
 use super::{socket::udp::UdpSocket, traits};
 
 pub mod error;
-mod types;
-
-pub const DNS_PORT: u16 = 53;
-lazy_static::lazy_static! {
-    static ref GOOGLE_DNS_HOST: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)), DNS_PORT);
-}
-
-#[allow(unused)]
-/// Create a DNS query for an A record
-pub fn create_a_type_query(domain: &str) -> Question {
-    Question::new(domain, dns_protocol::ResourceType::A, 1)
-}
-
-pub fn create_ptr_type_query<'a>(ip: &'a str) -> Question<'a> {
-    // let ip_v4_addr = Ipv4Addr::from(ip.0.to_be_bytes());
-    // let label = Label::from(ip_v4_addr.to_string().as_str());
-    let label = Label::from(ip);
-    Question::new(label, dns_protocol::ResourceType::Ptr, 1)
-}
+mod utils;
 
 /// A DNS resolver
 pub struct DnsResolver {
@@ -65,15 +53,6 @@ impl DnsResolver {
         Ok(DnsResolver { udp_socket, dns })
     }
 
-    fn connect_if_not_already(&mut self) -> Result<(), DnsError> {
-        if self.udp_socket.get_socket_state() != UdpSocketState::Connected {
-            self.udp_socket
-                .connect(self.dns)
-                .map_err(|e| DnsError::HostnameResolutionFailed(e.to_string()))?;
-        }
-        Ok(())
-    }
-
     /// Resolve a hostname to an IP address
     ///
     /// # Parameters
@@ -86,7 +65,7 @@ impl DnsResolver {
         self.connect_if_not_already()?;
 
         // create a new query
-        let mut questions = [super::dns::create_a_type_query(host)];
+        let mut questions = [create_a_type_query(host)];
         let query = dns_protocol::Message::new(
             0x42,
             Flags::standard_query(),
@@ -96,12 +75,8 @@ impl DnsResolver {
             &mut [],
         );
 
-        // create a new buffer with the size of the message
-        let mut tx_buf = a_vec![0u8; query.space_needed()];
-        // serialize the message into the buffer
-        query.write(&mut tx_buf).map_err(|_| {
-            DnsError::HostnameResolutionFailed("Could not serialize query".to_owned())
-        })?;
+        // create a new buffer storing the query
+        let tx_buf = self.serialise_query(query)?;
 
         // send the message to the DNS server
         let _ = self
@@ -160,9 +135,36 @@ impl DnsResolver {
         self.connect_if_not_already()?;
 
         let ip = addr.to_ip_addr().to_string();
-        let query = create_ptr_type_query(&ip);
+        let mut questions = [create_ptr_type_query(&ip)];
+        let query = dns_protocol::Message::new(
+            0x42,
+            Flags::standard_query(),
+            &mut questions,
+            &mut [],
+            &mut [],
+            &mut [],
+        );
+
+        let tx_buf = self.serialise_query(query)?;
 
         todo!("resolve_addr")
+    }
+
+    fn connect_if_not_already(&mut self) -> Result<(), DnsError> {
+        if self.udp_socket.get_socket_state() != UdpSocketState::Connected {
+            self.udp_socket
+                .connect(self.dns)
+                .map_err(|e| DnsError::HostnameResolutionFailed(e.to_string()))?;
+        }
+        Ok(())
+    }
+
+    fn serialise_query(&self, query: dns_protocol::Message) -> Result<vec::Vec<u8>, DnsError> {
+        let mut tx_buf = vec![0u8; query.space_needed()];
+        query.write(&mut tx_buf).map_err(|_| {
+            DnsError::HostnameResolutionFailed("Could not serialize query".to_owned())
+        })?;
+        Ok(tx_buf)
     }
 }
 
@@ -178,8 +180,8 @@ impl traits::dns::ResolveHostname for DnsResolver {
 impl traits::dns::ResolveAddr for DnsResolver {
     type Error = DnsError;
 
-    fn resolve_addr(&mut self, _addr: in_addr) -> Result<String, DnsError> {
-        todo!("resolve_addr")
+    fn resolve_addr(&mut self, addr: in_addr) -> Result<String, DnsError> {
+        self.resolve_addr(addr)
     }
 }
 
