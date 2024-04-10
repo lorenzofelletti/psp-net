@@ -12,7 +12,7 @@ pub fn create_a_type_query(domain: &str) -> Question {
     Question::new(domain, dns_protocol::ResourceType::A, 1)
 }
 
-pub fn create_ptr_type_query<'a>(ip: &'a str) -> Question<'a> {
+pub fn create_ptr_type_query(ip: &str) -> Question<'_> {
     // let ip_v4_addr = Ipv4Addr::from(ip.0.to_be_bytes());
     // let label = Label::from(ip_v4_addr.to_string().as_str());
     let label = Label::from(ip);
