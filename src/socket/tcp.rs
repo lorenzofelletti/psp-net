@@ -32,6 +32,10 @@ pub struct TcpSocket(i32, bool, Box<dyn SocketBuffer>);
 impl TcpSocket {
     #[allow(dead_code)]
     /// Open a TCP socket
+    ///
+    /// # Notes
+    /// Opening a TCP socket is not sufficient to send or receive data.
+    /// To have it ready call [`connect()`](TcpSocket::connect) before starting to send or receive data.
     pub fn open() -> Result<TcpSocket, SocketError> {
         let sock = unsafe { sys::sceNetInetSocket(netc::AF_INET as i32, netc::SOCK_STREAM, 0) };
         if sock < 0 {
@@ -77,6 +81,7 @@ impl TcpSocket {
         }
     }
 
+    /// Return the underlying socket's file descriptor
     #[allow(unused)]
     pub fn get_socket(&self) -> i32 {
         self.0
@@ -164,6 +169,7 @@ impl embedded_io::Write for TcpSocket {
         self._write(buf)
     }
 
+    /// Flush the socket
     fn flush(&mut self) -> Result<(), SocketError> {
         self._flush()
     }

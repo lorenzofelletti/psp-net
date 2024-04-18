@@ -33,7 +33,9 @@ impl<'a> TlsSocket<'a> {
     /// - `cert`: An optional certificate to use for the connection
     ///
     /// # Returns
-    /// A new TLS socket. The returned connection is not yet ready.
+    /// A new TLS socket.
+    ///
+    /// The returned connection is not ready yet.
     /// You must call [`Self::open()`] before you can start sending/receiving data.
     ///
     /// # Example
@@ -41,6 +43,10 @@ impl<'a> TlsSocket<'a> {
     /// let mut read_buf = TlsSocket::new_buffer();
     /// let mut write_buf = TlsSocket::new_buffer();
     /// let tls_socket = TlsSocket::new(tcp_socket, &mut read_buf, &mut write_buf, "example.com", None);
+    /// ```
+    ///
+    /// # Notes
+    /// In most cases you can pass `None` for the `cert` parameter.
     pub fn new(
         socket: TcpSocket,
         record_read_buf: &'a mut [u8],

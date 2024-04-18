@@ -35,6 +35,11 @@ pub struct UdpSocket(i32, Option<sockaddr>, UdpSocketState, Box<dyn SocketBuffer
 impl UdpSocket {
     #[allow(dead_code)]
     /// Open a socket
+    ///
+    /// # Notes
+    /// By opening a UDP socket, you just get a [`UdpSocket`], but that would not be ready to send or receive data yet.
+    /// To have it ready call [`bind()`](UdpSocket::bind) and [`connect()`](UdpSocket::connect) on it before starting to
+    /// send or receive data.
     pub fn open() -> Result<UdpSocket, SocketError> {
         let sock = unsafe { sys::sceNetInetSocket(netc::AF_INET as i32, netc::SOCK_DGRAM, 0) };
         if sock < 0 {
@@ -53,7 +58,7 @@ impl UdpSocket {
     /// Bind the socket
     ///
     /// # Parameters
-    /// - `addr`: The address to bind to, if `None` bind to `0.0.0.0:0`
+    /// - `addr`: The address to bind to, if `None` binds to `0.0.0.0:0`
     ///
     /// # Returns
     /// - `Ok(())` if the binding was successful
@@ -94,6 +99,7 @@ impl UdpSocket {
     ///
     /// # Notes
     /// The socket must be in state [`UdpSocketState::Bound`] to connect to a remote host.
+    /// To bind the socket use [`bind()`](UdpSocket::bind).
     pub fn connect(&mut self, addr: SocketAddr) -> Result<(), SocketError> {
         match self.2 {
             UdpSocketState::Unbound => return Err(SocketError::NotBound),
@@ -291,6 +297,7 @@ impl embedded_io::Write for UdpSocket {
         }
     }
 
+    /// Flush the socket
     fn flush(&mut self) -> Result<(), Self::Error> {
         match self.get_socket_state() {
             UdpSocketState::Unbound => Err(SocketError::NotBound),

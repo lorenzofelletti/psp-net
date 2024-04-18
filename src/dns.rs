@@ -61,7 +61,7 @@ impl DnsResolver {
         let dns = *GOOGLE_DNS_HOST;
         let mut udp_socket = UdpSocket::open().map_err(|_| DnsError::FailedToCreate)?;
         udp_socket
-            .bind(None)
+            .bind(Some(dns))
             .map_err(|_| DnsError::FailedToCreate)?;
 
         Ok(DnsResolver { udp_socket, dns })
