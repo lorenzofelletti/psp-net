@@ -7,7 +7,9 @@ use psp::sys;
 
 use core::ffi::c_void;
 
+use crate::traits::io::{EasySocket, Open, OptionType};
 use crate::traits::SocketBuffer;
+use crate::types::SocketOptions;
 
 use super::super::netc;
 
@@ -35,8 +37,8 @@ pub struct TcpSocket {
 
 impl TcpSocket {
     #[allow(dead_code)]
-    /// Open a TCP socket
-    pub fn open() -> Result<TcpSocket, SocketError> {
+    /// Create a TCP socket
+    pub fn new() -> Result<TcpSocket, SocketError> {
         let fd = unsafe { sys::sceNetInetSocket(netc::AF_INET as i32, netc::SOCK_STREAM, 0) };
         if fd < 0 {
             Err(SocketError::Errno(unsafe { sys::sceNetInetGetErrno() }))
@@ -153,6 +155,23 @@ impl ErrorType for TcpSocket {
     type Error = SocketError;
 }
 
+impl OptionType for TcpSocket {
+    type Options = SocketOptions;
+}
+
+impl Open for TcpSocket {
+    /// Return a TCP socket connected to the remote specified in `options`
+    fn open(options: Self::Options) -> Result<Self, Self::Error>
+    where
+        Self: Sized,
+    {
+        let mut socket = Self::new()?;
+        socket.connect(options.remote())?;
+
+        Ok(socket)
+    }
+}
+
 impl embedded_io::Read for TcpSocket {
     /// Read from the socket
     fn read<'m>(&'m mut self, buf: &'m mut [u8]) -> Result<usize, Self::Error> {
@@ -176,3 +195,5 @@ impl embedded_io::Write for TcpSocket {
         self._flush()
     }
 }
+
+impl EasySocket for TcpSocket {}
