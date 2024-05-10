@@ -77,7 +77,7 @@ impl DnsResolver {
     /// - `Err(())`: If the hostname could not be resolved
     pub fn resolve(&mut self, host: &str) -> Result<in_addr, DnsError> {
         // connect to the DNS server, if not already
-        if self.udp_socket.get_socket_state() != UdpSocketState::Connected {
+        if self.udp_socket.get_state() != UdpSocketState::Connected {
             self.udp_socket
                 .connect(self.dns)
                 .map_err(|e| DnsError::HostnameResolutionFailed(e.to_string()))?;
