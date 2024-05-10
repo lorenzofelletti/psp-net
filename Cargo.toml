@@ -14,7 +14,7 @@ default = []
 std = []
 
 [dependencies]
-psp = { version = "0.3.8" }
+psp = { version = "0.3.9" }
 dns-protocol = { version = "0.1.1", default-features = false }
 embedded-tls = { version = "0.17", default-features = false }
 embedded-io = { version = "0.6.1", default-features = false }
