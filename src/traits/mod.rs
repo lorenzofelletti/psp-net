@@ -1,6 +1,7 @@
 use alloc::vec::Vec;
 
 pub mod dns;
+pub mod io;
 
 /// A trait for a buffer that can be used with a socket
 pub trait SocketBuffer {
