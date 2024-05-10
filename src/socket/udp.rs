@@ -4,7 +4,13 @@ use psp::sys::{self, sockaddr, socklen_t};
 
 use core::ffi::c_void;
 
-use crate::traits::SocketBuffer;
+use crate::{
+    traits::{
+        io::{EasySocket, Open, OptionType},
+        SocketBuffer,
+    },
+    types::SocketOptions,
+};
 
 use super::{super::netc, error::SocketError, ToSockaddr};
 
@@ -30,6 +36,11 @@ pub enum UdpSocketState {
 ///
 /// # Notes
 /// - Remote [host](Self::1) is set when the socket is bound calling [`bind()`](UdpSocket::bind)
+/// - In addition to supporting the creation (with [`new`](Self::new)) and manual management of the socket,
+///   this struct implements [`EasySocket`] trait, which allows for an easier management of the socket,
+///   providing the [`open`](Self::open) method as an alternative to [`new`](Self::new).
+///   This method return a [`UdpSocket`] already connected, and ready to send/receive data (using the
+///   [`write`](embedded_io::Write::write) and [`read`](embedded_io::Read::read) methods).
 pub struct UdpSocket {
     fd: i32,
     remote: Option<sockaddr>,
@@ -39,8 +50,8 @@ pub struct UdpSocket {
 
 impl UdpSocket {
     #[allow(dead_code)]
-    /// Open a socket
-    pub fn open() -> Result<UdpSocket, SocketError> {
+    /// Create a socket
+    pub fn new() -> Result<UdpSocket, SocketError> {
         let fd = unsafe { sys::sceNetInetSocket(netc::AF_INET as i32, netc::SOCK_DGRAM, 0) };
         if fd < 0 {
             Err(SocketError::Errno(unsafe { sys::sceNetInetGetErrno() }))
@@ -262,8 +273,22 @@ impl Drop for UdpSocket {
     }
 }
 
+impl OptionType for UdpSocket {
+    type Options = SocketOptions;
+}
+
 impl embedded_io::ErrorType for UdpSocket {
     type Error = SocketError;
+}
+
+impl Open for UdpSocket {
+    fn open(options: Self::Options) -> Result<Self, Self::Error> {
+        let mut socket = Self::new()?;
+        socket.bind(None)?;
+        socket.connect(options.remote())?;
+
+        Ok(socket)
+    }
 }
 
 impl embedded_io::Read for UdpSocket {
@@ -304,3 +329,5 @@ impl embedded_io::Write for UdpSocket {
         }
     }
 }
+
+impl EasySocket for UdpSocket {}
