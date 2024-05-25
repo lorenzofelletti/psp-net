@@ -282,12 +282,11 @@ impl embedded_io::ErrorType for UdpSocket {
 }
 
 impl Open for UdpSocket {
-    fn open(options: Self::Options) -> Result<Self, Self::Error> {
-        let mut socket = Self::new()?;
-        socket.bind(None)?;
-        socket.connect(options.remote())?;
+    fn open(&mut self, options: Self::Options) -> Result<(), Self::Error> {
+        self.bind(None)?;
+        self.connect(options.remote())?;
 
-        Ok(socket)
+        Ok(())
     }
 }
 

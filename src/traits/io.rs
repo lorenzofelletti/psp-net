@@ -7,7 +7,7 @@ pub trait OptionType {
 /// Type implementing this trait support a Open semantics.
 pub trait Open: ErrorType + OptionType {
     /// Open a resource, using options for configuration.
-    fn open(options: Self::Options) -> Result<Self, Self::Error>
+    fn open(&mut self, options: Self::Options) -> Result<(), Self::Error>
     where
         Self: Sized;
 }

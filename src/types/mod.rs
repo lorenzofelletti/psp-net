@@ -2,7 +2,7 @@ use crate::{traits::io::OptionType, SocketAddr};
 
 #[derive(Clone, Copy)]
 pub struct SocketOptions {
-    remote: SocketAddr,
+    pub remote: SocketAddr,
 }
 
 impl OptionType for SocketOptions {
@@ -21,8 +21,8 @@ impl SocketOptions {
 
 #[derive(Clone, Copy)]
 pub struct TlsSocketOptions {
-    remote: SocketAddr,
-    seed: u64,
+    pub remote: SocketAddr,
+    pub seed: u64,
 }
 
 impl TlsSocketOptions {

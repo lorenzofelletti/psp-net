@@ -16,7 +16,6 @@ use super::super::netc;
 use super::error::SocketError;
 use super::ToSockaddr;
 
-// TODO: review implementation
 #[repr(C)]
 /// A TCP socket
 ///
@@ -29,6 +28,23 @@ use super::ToSockaddr;
 /// This is a wrapper around a raw socket file descriptor.
 ///
 /// The socket is closed when the struct is dropped.
+///
+/// # Notes
+/// The structure implements [`EasySocket`]. This allows you to interact with
+/// the socket using a simplified API. However, you are still free to use it
+/// like a normal Linux socket like you would do in C.
+///
+/// Using it as an easy socket allows you to use it in the following way:
+/// ```no_run
+/// use psp::net::TcpSocket;
+///
+/// let mut socket = TcpSocket::new().unwrap();
+/// let socket_options = SocketOptions{ remote: addr };
+/// socket.open(socket_options).unwrap();
+/// socket.write(b"hello world").unwrap();
+/// socket.flush().unwrap();
+/// // no need to call close, as drop will do it
+/// ```
 pub struct TcpSocket {
     fd: i32,
     is_connected: bool,
@@ -119,7 +135,6 @@ impl TcpSocket {
         }
 
         while !self.buffer.is_empty() {
-            psp::dprintln!("Flushing");
             self.send()?;
         }
         Ok(())
@@ -161,14 +176,13 @@ impl OptionType for TcpSocket {
 
 impl Open for TcpSocket {
     /// Return a TCP socket connected to the remote specified in `options`
-    fn open(options: Self::Options) -> Result<Self, Self::Error>
+    fn open(&mut self, options: Self::Options) -> Result<(), Self::Error>
     where
         Self: Sized,
     {
-        let mut socket = Self::new()?;
-        socket.connect(options.remote())?;
+        self.connect(options.remote())?;
 
-        Ok(socket)
+        Ok(())
     }
 }
 
