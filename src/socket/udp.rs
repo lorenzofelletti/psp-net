@@ -1,4 +1,5 @@
 use alloc::{boxed::Box, vec::Vec};
+use embedded_io::{ErrorType, Read, Write};
 use embedded_nal::{IpAddr, Ipv4Addr, SocketAddr};
 use psp::sys::{self, sockaddr, socklen_t};
 
@@ -28,13 +29,13 @@ pub enum UdpSocketState {
 /// A UDP socket
 ///
 /// # Fields
-/// - [`UdpSocket::fd`]: The socket file descriptor
-/// - [`UdpSocket::remote`]: The remote host to connect to
-/// - [`UdpSocket::state`]: The state of the socket
-/// - [`UdpSocket::buffer`]: The buffer to store data to send
+/// - [`fd`](Self::fd): The socket file descriptor
+/// - [`remote`](Self::remote): The remote host to connect to
+/// - [`state`](Self::state): The state of the socket
+/// - [`buffer`](Self::buffer): The buffer to store data to send
 ///
 /// # Notes
-/// - Remote [host](Self::1) is set when the socket is bound calling [`bind()`](UdpSocket::bind)
+/// - Remote host ([`Self::remote`]) is set when the socket is bound calling [`bind()`](UdpSocket::bind)
 /// - In addition to supporting the creation (with [`new`](Self::new)) and manual management of the socket,
 ///   this struct implements [`EasySocket`] trait, which allows for an easier management of the socket,
 ///   providing the [`open`](Self::open) method as an alternative to [`new`](Self::new).
@@ -277,7 +278,7 @@ impl OptionType for UdpSocket {
     type Options = SocketOptions;
 }
 
-impl embedded_io::ErrorType for UdpSocket {
+impl ErrorType for UdpSocket {
     type Error = SocketError;
 }
 
@@ -290,7 +291,7 @@ impl Open for UdpSocket {
     }
 }
 
-impl embedded_io::Read for UdpSocket {
+impl Read for UdpSocket {
     /// Read from the socket
     ///
     /// # Notes
@@ -306,7 +307,7 @@ impl embedded_io::Read for UdpSocket {
     }
 }
 
-impl embedded_io::Write for UdpSocket {
+impl Write for UdpSocket {
     /// Write to the socket
     ///
     /// # Notes

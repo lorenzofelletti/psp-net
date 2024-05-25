@@ -1,6 +1,6 @@
 use alloc::boxed::Box;
 use alloc::vec::Vec;
-use embedded_io::ErrorType;
+use embedded_io::{ErrorType, Read, Write};
 
 use embedded_nal::SocketAddr;
 use psp::sys;
@@ -16,13 +16,12 @@ use super::super::netc;
 use super::error::SocketError;
 use super::ToSockaddr;
 
-#[repr(C)]
 /// A TCP socket
 ///
 /// # Fields
-/// - [`Self::fd`]: The socket file descriptor
-/// - [`Self::is_connected`]: Whether the socket is connected
-/// - [`Self::buffer`]: The buffer to store data to send
+/// - [`fd`](Self::fd): The socket file descriptor
+/// - [`is_connected`](Self::is_connected): Whether the socket is connected
+/// - [`buffer`](Self::buffer): The buffer to store data to send
 ///
 /// # Safety
 /// This is a wrapper around a raw socket file descriptor.
@@ -45,6 +44,7 @@ use super::ToSockaddr;
 /// socket.flush().unwrap();
 /// // no need to call close, as drop will do it
 /// ```
+#[repr(C)]
 pub struct TcpSocket {
     fd: i32,
     is_connected: bool,
@@ -186,7 +186,7 @@ impl Open for TcpSocket {
     }
 }
 
-impl embedded_io::Read for TcpSocket {
+impl Read for TcpSocket {
     /// Read from the socket
     fn read<'m>(&'m mut self, buf: &'m mut [u8]) -> Result<usize, Self::Error> {
         if !self.is_connected {
@@ -196,7 +196,7 @@ impl embedded_io::Read for TcpSocket {
     }
 }
 
-impl embedded_io::Write for TcpSocket {
+impl Write for TcpSocket {
     /// Write to the socket
     fn write<'m>(&'m mut self, buf: &'m [u8]) -> Result<usize, Self::Error> {
         if !self.is_connected {

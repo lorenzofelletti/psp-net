@@ -11,7 +11,7 @@ pub mod traits;
 pub mod types;
 pub mod utils;
 
-// re-export
+// re-exports
 pub type SocketAddr = embedded_nal::SocketAddr;
 pub type TlsError = embedded_tls::TlsError;
 
