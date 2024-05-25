@@ -2,25 +2,26 @@ name: Rust
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Install latest nightly
+      - uses: actions/checkout@v4
+
+      - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
-            toolchain: nightly
-            override: true
-            components: rustfmt, clippy
-    - name: Build
-      run: cargo build --verbose
+          toolchain: nightly
+          override: true
+          components: rustfmt, clippy
+
+      - name: Build
+        run: cargo build --verbose
