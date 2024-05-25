@@ -1,10 +1,17 @@
 use alloc::{boxed::Box, vec::Vec};
+use embedded_io::{ErrorType, Read, Write};
 use embedded_nal::{IpAddr, Ipv4Addr, SocketAddr};
 use psp::sys::{self, sockaddr, socklen_t};
 
 use core::ffi::c_void;
 
-use crate::traits::SocketBuffer;
+use crate::{
+    traits::{
+        io::{EasySocket, Open, OptionType},
+        SocketBuffer,
+    },
+    types::SocketOptions,
+};
 
 use super::{super::netc, error::SocketError, ToSockaddr};
 
@@ -19,33 +26,43 @@ pub enum UdpSocketState {
     Connected,
 }
 
-#[repr(C)]
 /// A UDP socket
 ///
 /// # Fields
-/// - [`UdpSocket::0`]: The socket file descriptor
-/// - [`UdpSocket::1`]: The remote host to connect to
-/// - [`UdpSocket::2`]: The state of the socket
-/// - [`UdpSocket::3`]: The buffer to store data to send
+/// - [`fd`](Self::fd): The socket file descriptor
+/// - [`remote`](Self::remote): The remote host to connect to
+/// - [`state`](Self::state): The state of the socket
+/// - [`buffer`](Self::buffer): The buffer to store data to send
 ///
 /// # Notes
-/// - Remote [host](Self::1) is set when the socket is bound calling [`bind()`](UdpSocket::bind)
-pub struct UdpSocket(i32, Option<sockaddr>, UdpSocketState, Box<dyn SocketBuffer>);
+/// - Remote host ([`Self::remote`]) is set when the socket is bound calling [`bind()`](UdpSocket::bind)
+/// - In addition to supporting the creation (with [`new`](Self::new)) and manual management of the socket,
+///   this struct implements [`EasySocket`] trait, which allows for an easier management of the socket,
+///   providing the [`open`](Self::open) method as an alternative to [`new`](Self::new).
+///   This method return a [`UdpSocket`] already connected, and ready to send/receive data (using the
+///   [`write`](embedded_io::Write::write) and [`read`](embedded_io::Read::read) methods).
+#[repr(C)]
+pub struct UdpSocket {
+    fd: i32,
+    remote: Option<sockaddr>,
+    state: UdpSocketState,
+    buffer: Box<dyn SocketBuffer>,
+}
 
 impl UdpSocket {
     #[allow(dead_code)]
-    /// Open a socket
-    pub fn open() -> Result<UdpSocket, SocketError> {
-        let sock = unsafe { sys::sceNetInetSocket(netc::AF_INET as i32, netc::SOCK_DGRAM, 0) };
-        if sock < 0 {
+    /// Create a socket
+    pub fn new() -> Result<UdpSocket, SocketError> {
+        let fd = unsafe { sys::sceNetInetSocket(netc::AF_INET as i32, netc::SOCK_DGRAM, 0) };
+        if fd < 0 {
             Err(SocketError::Errno(unsafe { sys::sceNetInetGetErrno() }))
         } else {
-            Ok(UdpSocket(
-                sock,
-                None,
-                UdpSocketState::Unbound,
-                Box::<Vec<u8>>::default(),
-            ))
+            Ok(UdpSocket {
+                fd,
+                remote: None,
+                state: UdpSocketState::Unbound,
+                buffer: Box::<Vec<u8>>::default(),
+            })
         }
     }
 
@@ -59,7 +76,7 @@ impl UdpSocket {
     /// - `Ok(())` if the binding was successful
     /// - `Err(String)` if the binding was unsuccessful.
     pub fn bind(&mut self, addr: Option<SocketAddr>) -> Result<(), SocketError> {
-        if self.2 != UdpSocketState::Unbound {
+        if self.state != UdpSocketState::Unbound {
             return Err(SocketError::AlreadyBound);
         }
 
@@ -71,7 +88,7 @@ impl UdpSocket {
 
                 if unsafe {
                     sys::sceNetInetBind(
-                        self.0,
+                        self.fd,
                         &sockaddr,
                         core::mem::size_of::<netc::sockaddr>() as u32,
                     )
@@ -80,8 +97,8 @@ impl UdpSocket {
                     let errno = unsafe { sys::sceNetInetGetErrno() };
                     Err(SocketError::Errno(errno))
                 } else {
-                    self.1 = Some(sockaddr);
-                    self.2 = UdpSocketState::Bound;
+                    self.remote = Some(sockaddr);
+                    self.state = UdpSocketState::Bound;
                     Ok(())
                 }
             }
@@ -95,7 +112,7 @@ impl UdpSocket {
     /// # Notes
     /// The socket must be in state [`UdpSocketState::Bound`] to connect to a remote host.
     pub fn connect(&mut self, addr: SocketAddr) -> Result<(), SocketError> {
-        match self.2 {
+        match self.state {
             UdpSocketState::Unbound => return Err(SocketError::NotBound),
             UdpSocketState::Bound => {}
             UdpSocketState::Connected => return Err(SocketError::AlreadyConnected),
@@ -105,12 +122,12 @@ impl UdpSocket {
             SocketAddr::V4(v4) => {
                 let sockaddr = v4.to_sockaddr();
 
-                if unsafe { sys::sceNetInetConnect(self.0, &sockaddr, Self::socket_len()) } != 0 {
+                if unsafe { sys::sceNetInetConnect(self.fd, &sockaddr, Self::socket_len()) } != 0 {
                     let errno = unsafe { sys::sceNetInetGetErrno() };
                     Err(SocketError::Errno(errno))
                 } else {
-                    self.1 = Some(sockaddr);
-                    self.2 = UdpSocketState::Connected;
+                    self.remote = Some(sockaddr);
+                    self.state = UdpSocketState::Connected;
                     Ok(())
                 }
             }
@@ -121,12 +138,12 @@ impl UdpSocket {
     #[allow(unused)]
     /// Read from a socket in state [`UdpSocketState::Connected`]
     fn _read(&mut self, buf: &mut [u8]) -> Result<usize, SocketError> {
-        if self.2 != UdpSocketState::Connected {
+        if self.state != UdpSocketState::Connected {
             return Err(SocketError::NotConnected);
         }
-        let mut sockaddr = self.1.ok_or(SocketError::Other)?;
+        let mut sockaddr = self.remote.ok_or(SocketError::Other)?;
         let result =
-            unsafe { sys::sceNetInetRecv(self.0, buf.as_mut_ptr() as *mut c_void, buf.len(), 0) };
+            unsafe { sys::sceNetInetRecv(self.fd, buf.as_mut_ptr() as *mut c_void, buf.len(), 0) };
         if (result as i32) < 0 {
             Err(SocketError::Errno(unsafe { sys::sceNetInetGetErrno() }))
         } else {
@@ -137,15 +154,15 @@ impl UdpSocket {
     #[allow(unused)]
     /// Write to a socket in state [`UdpSocketState::Bound`]
     fn _read_from(&mut self, buf: &mut [u8]) -> Result<usize, SocketError> {
-        match self.2 {
+        match self.state {
             UdpSocketState::Unbound => return Err(SocketError::NotBound),
             UdpSocketState::Bound => {}
             UdpSocketState::Connected => return Err(SocketError::AlreadyConnected),
         }
-        let mut sockaddr = self.1.ok_or(SocketError::Other)?;
+        let mut sockaddr = self.remote.ok_or(SocketError::Other)?;
         let result = unsafe {
             sys::sceNetInetRecvfrom(
-                self.0,
+                self.fd,
                 buf.as_mut_ptr() as *mut c_void,
                 buf.len(),
                 0,
@@ -163,7 +180,7 @@ impl UdpSocket {
     #[allow(unused)]
     /// Write to a socket in state [`UdpSocketState::Bound`]
     fn _write_to(&mut self, buf: &[u8], len: usize, to: SocketAddr) -> Result<usize, SocketError> {
-        match self.2 {
+        match self.state {
             UdpSocketState::Unbound => return Err(SocketError::NotBound),
             UdpSocketState::Bound => {}
             UdpSocketState::Connected => return Err(SocketError::AlreadyConnected),
@@ -175,11 +192,11 @@ impl UdpSocket {
         }?;
         let socklen = core::mem::size_of::<netc::sockaddr>() as u32;
 
-        self.3.append_buffer(buf);
+        self.buffer.append_buffer(buf);
 
         let result = unsafe {
             sys::sceNetInetSendto(
-                self.0,
+                self.fd,
                 buf.as_ptr() as *const c_void,
                 len,
                 0,
@@ -190,7 +207,7 @@ impl UdpSocket {
         if (result as i32) < 0 {
             Err(SocketError::Errno(unsafe { sys::sceNetInetGetErrno() }))
         } else {
-            self.3.shift_left_buffer(result as usize);
+            self.buffer.shift_left_buffer(result as usize);
             Ok(result as usize)
         }
     }
@@ -198,21 +215,21 @@ impl UdpSocket {
     #[allow(unused)]
     /// Write to a socket in state [`UdpSocketState::Connected`]
     fn _write(&mut self, buf: &[u8]) -> Result<usize, SocketError> {
-        if self.2 != UdpSocketState::Connected {
+        if self.state != UdpSocketState::Connected {
             return Err(SocketError::NotConnected);
         }
 
-        self.3.append_buffer(buf);
+        self.buffer.append_buffer(buf);
 
         self.send()
     }
 
     fn _flush(&mut self) -> Result<(), SocketError> {
-        if self.2 != UdpSocketState::Connected {
+        if self.state != UdpSocketState::Connected {
             return Err(SocketError::NotConnected);
         }
 
-        while !self.3.is_empty() {
+        while !self.buffer.is_empty() {
             self.send()?;
         }
         Ok(())
@@ -221,16 +238,16 @@ impl UdpSocket {
     fn send(&mut self) -> Result<usize, SocketError> {
         let result = unsafe {
             sys::sceNetInetSend(
-                self.0,
-                self.3.as_slice().as_ptr() as *const c_void,
-                self.3.len(),
+                self.fd,
+                self.buffer.as_slice().as_ptr() as *const c_void,
+                self.buffer.len(),
                 0,
             )
         };
         if (result as i32) < 0 {
             Err(SocketError::Errno(unsafe { sys::sceNetInetGetErrno() }))
         } else {
-            self.3.shift_left_buffer(result as usize);
+            self.buffer.shift_left_buffer(result as usize);
             Ok(result as usize)
         }
     }
@@ -238,9 +255,9 @@ impl UdpSocket {
     /// Get the state of the socket
     ///
     /// # Returns
-    /// The state of the socket
-    pub fn get_socket_state(&self) -> UdpSocketState {
-        self.2
+    /// The state of the socket, one of [`UdpSocketState`]
+    pub fn get_state(&self) -> UdpSocketState {
+        self.state
     }
 
     fn socket_len() -> socklen_t {
@@ -252,16 +269,29 @@ impl Drop for UdpSocket {
     /// Close the socket
     fn drop(&mut self) {
         unsafe {
-            sys::sceNetInetClose(self.0);
+            sys::sceNetInetClose(self.fd);
         }
     }
 }
 
-impl embedded_io::ErrorType for UdpSocket {
+impl OptionType for UdpSocket {
+    type Options = SocketOptions;
+}
+
+impl ErrorType for UdpSocket {
     type Error = SocketError;
 }
 
-impl embedded_io::Read for UdpSocket {
+impl Open for UdpSocket {
+    fn open(&mut self, options: Self::Options) -> Result<(), Self::Error> {
+        self.bind(None)?;
+        self.connect(options.remote())?;
+
+        Ok(())
+    }
+}
+
+impl Read for UdpSocket {
     /// Read from the socket
     ///
     /// # Notes
@@ -269,7 +299,7 @@ impl embedded_io::Read for UdpSocket {
     /// otherwise it will attempt to read from the socket. You can check the state of the socket
     /// using [`get_socket_state`](Self::get_socket_state).
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
-        match self.get_socket_state() {
+        match self.get_state() {
             UdpSocketState::Unbound => Err(SocketError::NotBound),
             UdpSocketState::Bound => self._read_from(buf),
             UdpSocketState::Connected => self._read(buf),
@@ -277,14 +307,14 @@ impl embedded_io::Read for UdpSocket {
     }
 }
 
-impl embedded_io::Write for UdpSocket {
+impl Write for UdpSocket {
     /// Write to the socket
     ///
     /// # Notes
     /// If the socket is not in state [`UdpSocketState::Connected`] this will return an error.
     /// To connect to a remote host use [`connect`](UdpSocket::connect) first.
     fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
-        match self.get_socket_state() {
+        match self.get_state() {
             UdpSocketState::Unbound => Err(SocketError::NotBound),
             UdpSocketState::Bound => Err(SocketError::NotConnected),
             UdpSocketState::Connected => self._write(buf),
@@ -292,10 +322,12 @@ impl embedded_io::Write for UdpSocket {
     }
 
     fn flush(&mut self) -> Result<(), Self::Error> {
-        match self.get_socket_state() {
+        match self.get_state() {
             UdpSocketState::Unbound => Err(SocketError::NotBound),
             UdpSocketState::Bound => Err(SocketError::NotConnected),
             UdpSocketState::Connected => self._flush(),
         }
     }
 }
+
+impl EasySocket for UdpSocket {}
