@@ -1,0 +1,33 @@
+name: Publish
+
+on:
+  # only when Cargo.toml is changed and a new tag is created
+  push:
+    paths:
+      - Cargo.toml
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    env:
+      CARGO_TERM_COLOR: always
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+
+      # if build fails, we don't publish
+      - name: Build
+        run: cargo build --release
+
+      - run: cargo publish --token ${CRATES_TOKEN}
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
