@@ -1,10 +1,7 @@
 name: Publish
 
 on:
-  # only when Cargo.toml is changed and a new tag is created
   push:
-    paths:
-      - Cargo.toml
     tags:
       - "v*"
 
