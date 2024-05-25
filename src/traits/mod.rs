@@ -15,16 +15,20 @@ pub trait SocketBuffer {
     /// Shift the buffer to the left by amount.
     /// This is used to remove data from the buffer.
     fn shift_left_buffer(&mut self, amount: usize);
+
     /// Clear the buffer
     fn clear(&mut self) {
         self.shift_left_buffer(self.len());
     }
+
     /// Check if the buffer is empty
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
     /// Get the buffer as a slice
     fn as_slice(&self) -> &[u8];
+
     /// Get the length of the buffer
     fn len(&self) -> usize;
 }

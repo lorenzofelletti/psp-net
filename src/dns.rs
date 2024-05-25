@@ -20,8 +20,8 @@ lazy_static::lazy_static! {
     static ref GOOGLE_DNS_HOST: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)), DNS_PORT);
 }
 
-#[allow(unused)]
 /// Create a DNS query for an A record
+#[allow(unused)]
 pub fn create_a_type_query(domain: &str) -> Question {
     Question::new(domain, dns_protocol::ResourceType::A, 1)
 }

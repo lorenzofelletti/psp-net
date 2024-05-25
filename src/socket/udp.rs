@@ -25,7 +25,6 @@ pub enum UdpSocketState {
     Connected,
 }
 
-#[repr(C)]
 /// A UDP socket
 ///
 /// # Fields
@@ -41,6 +40,7 @@ pub enum UdpSocketState {
 ///   providing the [`open`](Self::open) method as an alternative to [`new`](Self::new).
 ///   This method return a [`UdpSocket`] already connected, and ready to send/receive data (using the
 ///   [`write`](embedded_io::Write::write) and [`read`](embedded_io::Read::read) methods).
+#[repr(C)]
 pub struct UdpSocket {
     fd: i32,
     remote: Option<sockaddr>,
