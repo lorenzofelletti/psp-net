@@ -14,8 +14,6 @@ jobs:
 
     env:
       CARGO_TERM_COLOR: always
-      # replace hyphens (-) with underscores (_)
-      PROJECT_NAME: psp_net
 
     steps:
       - uses: actions/checkout@v4
