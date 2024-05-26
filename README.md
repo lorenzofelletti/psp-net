@@ -8,5 +8,7 @@ It provides many useful features, notably:
 - A TLS socket
 - A DNS resolver.
 
+The TCP Socket provided by this crate is compatible with [embedded-tls](https://github.com/drogue-iot/embedded-tls) TLS socket library.
+
 # Notes
 This crate require the use of nightly Rust.
