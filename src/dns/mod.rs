@@ -1,41 +1,27 @@
 use alloc::{
     borrow::ToOwned,
     string::{String, ToString},
-    vec as a_vec,
+    vec,
 };
-use dns_protocol::{Flags, Question, ResourceRecord};
+use dns_protocol::{Flags, ResourceRecord};
 use embedded_io::{Read, Write};
-use embedded_nal::{IpAddr, Ipv4Addr, SocketAddr};
+use embedded_nal::SocketAddr;
 use psp::sys::in_addr;
 
-use crate::socket::udp::UdpSocketState;
-
-use super::{
-    socket::{udp::UdpSocket, ToSocketAddr},
-    traits,
+use crate::{
+    dns::utils::create_ptr_type_query,
+    socket::{udp::UdpSocketState, ToIpAddr, ToSocketAddr},
 };
 
-pub const DNS_PORT: u16 = 53;
-lazy_static::lazy_static! {
-    static ref GOOGLE_DNS_HOST: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)), DNS_PORT);
-}
+use self::{
+    error::DnsError,
+    utils::{create_a_type_query, GOOGLE_DNS_HOST},
+};
 
-/// Create a DNS query for an A record
-#[allow(unused)]
-pub fn create_a_type_query(domain: &str) -> Question {
-    Question::new(domain, dns_protocol::ResourceType::A, 1)
-}
+use super::{socket::udp::UdpSocket, traits};
 
-/// An error that can occur when using a DNS resolver
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum DnsError {
-    /// The DNS resolver failed to create
-    FailedToCreate,
-    /// The hostname could not be resolved
-    HostnameResolutionFailed(String),
-    /// The IP address could not be resolved
-    AddressResolutionFailed(String),
-}
+pub mod error;
+mod utils;
 
 /// A DNS resolver
 pub struct DnsResolver {
@@ -75,16 +61,11 @@ impl DnsResolver {
     /// # Returns
     /// - `Ok(in_addr)`: The IP address of the hostname
     /// - `Err(())`: If the hostname could not be resolved
-    pub fn resolve(&mut self, host: &str) -> Result<in_addr, DnsError> {
-        // connect to the DNS server, if not already
-        if self.udp_socket.get_state() != UdpSocketState::Connected {
-            self.udp_socket
-                .connect(self.dns)
-                .map_err(|e| DnsError::HostnameResolutionFailed(e.to_string()))?;
-        }
+    pub fn resolve_hostname(&mut self, host: &str) -> Result<in_addr, DnsError> {
+        self.connect_if_not_already()?;
 
         // create a new query
-        let mut questions = [super::dns::create_a_type_query(host)];
+        let mut questions = [create_a_type_query(host)];
         let query = dns_protocol::Message::new(
             0x42,
             Flags::standard_query(),
@@ -94,12 +75,8 @@ impl DnsResolver {
             &mut [],
         );
 
-        // create a new buffer with the size of the message
-        let mut tx_buf = a_vec![0u8; query.space_needed()];
-        // serialize the message into the buffer
-        query.write(&mut tx_buf).map_err(|_| {
-            DnsError::HostnameResolutionFailed("Could not serialize query".to_owned())
-        })?;
+        // create a new buffer storing the query
+        let tx_buf = self.serialise_query(query)?;
 
         // send the message to the DNS server
         let _ = self
@@ -153,21 +130,58 @@ impl DnsResolver {
             )),
         }
     }
+
+    fn resolve_addr(&mut self, addr: in_addr) -> Result<String, DnsError> {
+        self.connect_if_not_already()?;
+
+        let ip = addr.to_ip_addr().to_string();
+        let mut questions = [create_ptr_type_query(&ip)];
+        let query = dns_protocol::Message::new(
+            0x42,
+            Flags::standard_query(),
+            &mut questions,
+            &mut [],
+            &mut [],
+            &mut [],
+        );
+
+        let tx_buf = self.serialise_query(query)?;
+
+        todo!("resolve_addr")
+    }
+
+    fn connect_if_not_already(&mut self) -> Result<(), DnsError> {
+        if self.udp_socket.get_state() != UdpSocketState::Connected {
+            self.udp_socket
+                .connect(self.dns)
+                .map_err(|e| DnsError::HostnameResolutionFailed(e.to_string()))?;
+        }
+        Ok(())
+    }
+
+    fn serialise_query(&self, query: dns_protocol::Message) -> Result<vec::Vec<u8>, DnsError> {
+        let mut tx_buf = vec![0u8; query.space_needed()];
+        query.write(&mut tx_buf).map_err(|_| {
+            DnsError::HostnameResolutionFailed("Could not serialize query".to_owned())
+        })?;
+        Ok(tx_buf)
+    }
 }
 
 impl traits::dns::ResolveHostname for DnsResolver {
     type Error = DnsError;
 
     fn resolve_hostname(&mut self, hostname: &str) -> Result<SocketAddr, DnsError> {
-        self.resolve(hostname).map(|addr| addr.to_socket_addr())
+        self.resolve_hostname(hostname)
+            .map(|addr| addr.to_socket_addr())
     }
 }
 
 impl traits::dns::ResolveAddr for DnsResolver {
     type Error = DnsError;
 
-    fn resolve_addr(&mut self, _addr: in_addr) -> Result<String, DnsError> {
-        todo!("resolve_addr")
+    fn resolve_addr(&mut self, addr: in_addr) -> Result<String, DnsError> {
+        self.resolve_addr(addr)
     }
 }
 
