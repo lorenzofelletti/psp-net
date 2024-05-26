@@ -495,9 +495,9 @@ dependencies = [
 
 [[package]]
 name = "psp"
-version = "0.3.7"
+version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2203da58ae0405ae84237505ae05e9b3b28eb0c0e5d9afa8a5e1e80c70db5eb4"
+checksum = "b5da5105eb984565819ac0f3e09132991b9169b1b57f7172573eb710507a276b"
 dependencies = [
  "bitflags",
  "libm",
@@ -509,7 +509,7 @@ dependencies = [
 
 [[package]]
 name = "psp-net"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "dns-protocol",
  "embedded-io",

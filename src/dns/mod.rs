@@ -33,7 +33,7 @@ impl DnsResolver {
     /// Create a new DNS resolver
     #[allow(unused)]
     pub fn new(dns: SocketAddr) -> Result<Self, DnsError> {
-        let mut udp_socket = UdpSocket::open().map_err(|_| DnsError::FailedToCreate)?;
+        let mut udp_socket = UdpSocket::new().map_err(|_| DnsError::FailedToCreate)?;
         udp_socket
             .bind(Some(dns))
             .map_err(|_| DnsError::FailedToCreate)?;
@@ -45,7 +45,7 @@ impl DnsResolver {
     /// The default settings are to use Google's DNS server at `8.8.8.8:53`
     pub fn try_default() -> Result<Self, DnsError> {
         let dns = *GOOGLE_DNS_HOST;
-        let mut udp_socket = UdpSocket::open().map_err(|_| DnsError::FailedToCreate)?;
+        let mut udp_socket = UdpSocket::new().map_err(|_| DnsError::FailedToCreate)?;
         udp_socket
             .bind(None)
             .map_err(|_| DnsError::FailedToCreate)?;
@@ -151,7 +151,7 @@ impl DnsResolver {
     }
 
     fn connect_if_not_already(&mut self) -> Result<(), DnsError> {
-        if self.udp_socket.get_socket_state() != UdpSocketState::Connected {
+        if self.udp_socket.get_state() != UdpSocketState::Connected {
             self.udp_socket
                 .connect(self.dns)
                 .map_err(|e| DnsError::HostnameResolutionFailed(e.to_string()))?;
