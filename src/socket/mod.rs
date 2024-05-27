@@ -24,6 +24,7 @@ fn socket_addr_v4_to_sockaddr(addr: SocketAddrV4) -> sockaddr {
     unsafe { core::mem::transmute::<netc::sockaddr_in, netc::sockaddr>(sockaddr_in) }
 }
 
+/// Convert to a [`sockaddr`]
 pub trait ToSockaddr {
     fn to_sockaddr(&self) -> sockaddr;
 }
@@ -34,6 +35,7 @@ impl ToSockaddr for SocketAddrV4 {
     }
 }
 
+/// Convert to a [`SocketAddr`]
 pub trait ToSocketAddr {
     fn to_socket_addr(&self) -> SocketAddr;
 }
@@ -43,5 +45,21 @@ impl ToSocketAddr for in_addr {
         let octets = self.0.to_be_bytes();
         let ip = Ipv4Addr::new(octets[0], octets[1], octets[2], octets[3]);
         SocketAddr::V4(SocketAddrV4::new(ip, 0))
+    }
+}
+
+impl ToSocketAddr for sockaddr {
+    fn to_socket_addr(&self) -> SocketAddr {
+        let sockaddr_in =
+            unsafe { core::mem::transmute::<netc::sockaddr, netc::sockaddr_in>(*self) };
+
+        let octets = sockaddr_in.sin_addr.0.to_be_bytes();
+
+        let port = u16::to_be(sockaddr_in.sin_port);
+
+        SocketAddr::V4(SocketAddrV4::new(
+            Ipv4Addr::new(octets[0], octets[1], octets[2], octets[3]),
+            port,
+        ))
     }
 }
