@@ -5,6 +5,7 @@ pub mod io;
 
 /// A trait for a buffer that can be used with a socket
 pub trait SocketBuffer {
+    /// Create a new buffer
     fn new() -> Self
     where
         Self: Sized;
@@ -12,7 +13,8 @@ pub trait SocketBuffer {
     /// Append a buffer to the end of itself
     fn append_buffer(&mut self, buf: &[u8]);
 
-    /// Shift the buffer to the left by amount.
+    /// Shift the buffer to the left by amount
+    ///
     /// This is used to remove data from the buffer.
     fn shift_left_buffer(&mut self, amount: usize);
 

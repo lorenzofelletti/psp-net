@@ -18,15 +18,11 @@ use super::ToSockaddr;
 
 /// A TCP socket
 ///
-/// # Fields
-/// - [`fd`](Self::fd): The socket file descriptor
-/// - [`is_connected`](Self::is_connected): Whether the socket is connected
-/// - [`buffer`](Self::buffer): The buffer to store data to send
-///
 /// # Safety
 /// This is a wrapper around a raw socket file descriptor.
 ///
 /// The socket is closed when the struct is dropped.
+/// Closing via drop is best-effort.
 ///
 /// # Notes
 /// The structure implements [`EasySocket`]. This allows you to interact with
@@ -46,14 +42,17 @@ use super::ToSockaddr;
 /// ```
 #[repr(C)]
 pub struct TcpSocket {
+    /// The socket file descriptor
     fd: i32,
+    /// Whether the socket is connected
     is_connected: bool,
+    /// The buffer to store data to send
     buffer: Box<dyn SocketBuffer>,
 }
 
 impl TcpSocket {
-    #[allow(dead_code)]
     /// Create a TCP socket
+    #[allow(dead_code)]
     pub fn new() -> Result<TcpSocket, SocketError> {
         let fd = unsafe { sys::sceNetInetSocket(netc::AF_INET as i32, netc::SOCK_STREAM, 0) };
         if fd < 0 {
@@ -74,9 +73,10 @@ impl TcpSocket {
     ///
     /// # Returns
     /// - `Ok(())` if the connection was successful
+    /// - `Err(String)` if the connection was unsuccessful.
     #[allow(dead_code)]
     #[allow(clippy::cast_possible_truncation)]
-    /// - `Err(String)` if the connection was unsuccessful.
+    #[allow(dead_code)]
     pub fn connect(&mut self, remote: SocketAddr) -> Result<(), SocketError> {
         if self.is_connected {
             return Err(SocketError::AlreadyConnected);
@@ -104,6 +104,7 @@ impl TcpSocket {
         }
     }
 
+    /// Return the underlying socket's file descriptor
     #[allow(unused)]
     pub fn get_socket(&self) -> i32 {
         self.fd
@@ -206,6 +207,7 @@ impl Write for TcpSocket {
         self._write(buf)
     }
 
+    /// Flush the socket
     fn flush(&mut self) -> Result<(), SocketError> {
         self._flush()
     }

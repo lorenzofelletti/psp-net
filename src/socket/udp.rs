@@ -28,12 +28,6 @@ pub enum UdpSocketState {
 
 /// A UDP socket
 ///
-/// # Fields
-/// - [`fd`](Self::fd): The socket file descriptor
-/// - [`remote`](Self::remote): The remote host to connect to
-/// - [`state`](Self::state): The state of the socket
-/// - [`buffer`](Self::buffer): The buffer to store data to send
-///
 /// # Notes
 /// - Remote host ([`Self::remote`]) is set when the socket is bound calling [`bind()`](UdpSocket::bind)
 /// - In addition to supporting the creation (with [`new`](Self::new)) and manual management of the socket,
@@ -41,11 +35,16 @@ pub enum UdpSocketState {
 ///   providing the [`open`](Self::open) method as an alternative to [`new`](Self::new).
 ///   This method return a [`UdpSocket`] already connected, and ready to send/receive data (using the
 ///   [`write`](embedded_io::Write::write) and [`read`](embedded_io::Read::read) methods).
+/// - The socket is closed when the struct is dropped. Closing via drop is best-effort.
 #[repr(C)]
 pub struct UdpSocket {
+    /// The socket file descriptor
     fd: i32,
+    /// The remote host to connect to
     remote: Option<sockaddr>,
+    /// The state of the socket
     state: UdpSocketState,
+    /// The buffer to store data to send
     buffer: Box<dyn SocketBuffer>,
 }
 
@@ -69,7 +68,7 @@ impl UdpSocket {
     /// Bind the socket
     ///
     /// # Parameters
-    /// - `addr`: The address to bind to, if `None` bind to `0.0.0.0:0`
+    /// - `addr`: The address to bind to, if `None` binds to `0.0.0.0:0`
     ///
     /// # Returns
     /// - `Ok(())` if the binding was successful
@@ -110,6 +109,7 @@ impl UdpSocket {
     ///
     /// # Notes
     /// The socket must be in state [`UdpSocketState::Bound`] to connect to a remote host.
+    /// To bind the socket use [`bind()`](UdpSocket::bind).
     #[allow(unused)]
     pub fn connect(&mut self, addr: SocketAddr) -> Result<(), SocketError> {
         match self.state {
@@ -213,8 +213,8 @@ impl UdpSocket {
         }
     }
 
-    #[allow(unused)]
     /// Write to a socket in state [`UdpSocketState::Connected`]
+    #[allow(unused)]
     fn _write(&mut self, buf: &[u8]) -> Result<usize, SocketError> {
         if self.state != UdpSocketState::Connected {
             return Err(SocketError::NotConnected);
@@ -322,6 +322,7 @@ impl Write for UdpSocket {
         }
     }
 
+    /// Flush the socket
     fn flush(&mut self) -> Result<(), Self::Error> {
         match self.get_state() {
             UdpSocketState::Unbound => Err(SocketError::NotBound),
