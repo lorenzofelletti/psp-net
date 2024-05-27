@@ -13,7 +13,7 @@ use crate::{
     types::SocketOptions,
 };
 
-use super::{super::netc, error::SocketError, ToSockaddr};
+use super::{super::netc, error::SocketError, ToSockaddr, ToSocketAddr};
 
 /// The state of a [`UdpSocket`]
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -50,6 +50,11 @@ pub struct UdpSocket {
 
 impl UdpSocket {
     /// Create a socket
+    ///
+    /// # Notes
+    /// - Creating a new socket is not sufficient to start sending/receiving data.
+    ///   You must call [`Self::open()`] (if you're using it in [`EasySocket`] mode), or
+    ///   [`Self::bind()`] and/or [`Self::connect()`].
     #[allow(dead_code)]
     pub fn new() -> Result<UdpSocket, SocketError> {
         let fd = unsafe { sys::sceNetInetSocket(netc::AF_INET as i32, netc::SOCK_DGRAM, 0) };
@@ -264,6 +269,19 @@ impl UdpSocket {
     fn socket_len() -> socklen_t {
         core::mem::size_of::<netc::sockaddr>() as u32
     }
+
+    /// Get the file descriptor of the socket
+    pub fn fd(&self) -> i32 {
+        self.fd
+    }
+
+    /// Get the remote address of the socket
+    pub fn remote(&self) -> Option<SocketAddr> {
+        match self.remote {
+            Some(sockaddr) => Some(sockaddr.to_socket_addr()),
+            None => None,
+        }
+    }
 }
 
 impl Drop for UdpSocket {
@@ -284,6 +302,7 @@ impl ErrorType for UdpSocket {
 }
 
 impl Open for UdpSocket {
+    /// Open the socket
     fn open(&mut self, options: Self::Options) -> Result<(), Self::Error> {
         self.bind(None)?;
         self.connect(options.remote())?;
