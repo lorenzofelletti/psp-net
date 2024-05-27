@@ -1,5 +1,5 @@
 use alloc::string::String;
-use embedded_io::Write;
+use embedded_io::{ErrorType, Read, Write};
 use embedded_tls::{
     blocking::TlsConnection, Aes128GcmSha256, Certificate, NoVerify, TlsConfig, TlsContext,
 };
@@ -7,6 +7,11 @@ use embedded_tls::{
 use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
 use regex::Regex;
+
+use crate::{
+    traits::io::{Open, OptionType},
+    types::TlsSocketOptions,
+};
 
 use super::tcp::TcpSocket;
 
@@ -89,27 +94,9 @@ impl<'a> TlsSocket<'a> {
         [0; 16_384]
     }
 
-    /// Open the TLS connection.
-    pub fn open(&mut self, seed: u64) -> Result<(), embedded_tls::TlsError> {
-        let mut rng = ChaCha20Rng::seed_from_u64(seed);
-        let tls_context = TlsContext::new(&self.tls_config, &mut rng);
-        self.tls_connection
-            .open::<ChaCha20Rng, NoVerify>(tls_context)
-    }
-
-    /// Write data to the TLS connection.
-    pub fn write(&mut self, buf: &[u8]) -> Result<usize, embedded_tls::TlsError> {
-        self.tls_connection.write(buf)
-    }
-
     /// Write all data to the TLS connection.
     pub fn write_all(&mut self, buf: &[u8]) -> Result<(), embedded_tls::TlsError> {
         self.tls_connection.write_all(buf)
-    }
-
-    /// Read data from the TLS connection.
-    pub fn read(&mut self, buf: &mut [u8]) -> Result<usize, embedded_tls::TlsError> {
-        self.tls_connection.read(buf)
     }
 
     /// Read data from the TLS connection and converts it to a [`String`].
@@ -121,9 +108,41 @@ impl<'a> TlsSocket<'a> {
         let text = REGEX.replace_all(&text, "");
         Ok(text.into_owned())
     }
+}
+
+impl ErrorType for TlsSocket<'_> {
+    type Error = embedded_tls::TlsError;
+}
+
+impl OptionType for TlsSocket<'_> {
+    type Options = TlsSocketOptions;
+}
+
+impl Open for TlsSocket<'_> {
+    /// Open the TLS connection.
+    fn open(&mut self, options: Self::Options) -> Result<(), embedded_tls::TlsError> {
+        let mut rng = ChaCha20Rng::seed_from_u64(options.seed());
+        let tls_context = TlsContext::new(&self.tls_config, &mut rng);
+        self.tls_connection
+            .open::<ChaCha20Rng, NoVerify>(tls_context)
+    }
+}
+
+impl embedded_io::Read for TlsSocket<'_> {
+    /// Read data from the TLS connection.
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
+        self.tls_connection.read(buf)
+    }
+}
+
+impl embedded_io::Write for TlsSocket<'_> {
+    /// Write data to the TLS connection.
+    fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+        self.tls_connection.write(buf)
+    }
 
     /// Flush the TLS connection.
-    pub fn flush(&mut self) -> Result<(), embedded_tls::TlsError> {
+    fn flush(&mut self) -> Result<(), Self::Error> {
         self.tls_connection.flush()
     }
 }

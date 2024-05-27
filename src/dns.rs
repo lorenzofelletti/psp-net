@@ -20,8 +20,8 @@ lazy_static::lazy_static! {
     static ref GOOGLE_DNS_HOST: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)), DNS_PORT);
 }
 
-#[allow(unused)]
 /// Create a DNS query for an A record
+#[allow(unused)]
 pub fn create_a_type_query(domain: &str) -> Question {
     Question::new(domain, dns_protocol::ResourceType::A, 1)
 }
@@ -47,7 +47,7 @@ impl DnsResolver {
     /// Create a new DNS resolver
     #[allow(unused)]
     pub fn new(dns: SocketAddr) -> Result<Self, DnsError> {
-        let mut udp_socket = UdpSocket::open().map_err(|_| DnsError::FailedToCreate)?;
+        let mut udp_socket = UdpSocket::new().map_err(|_| DnsError::FailedToCreate)?;
         udp_socket
             .bind(Some(dns))
             .map_err(|_| DnsError::FailedToCreate)?;
@@ -59,7 +59,7 @@ impl DnsResolver {
     /// The default settings are to use Google's DNS server at `8.8.8.8:53`
     pub fn try_default() -> Result<Self, DnsError> {
         let dns = *GOOGLE_DNS_HOST;
-        let mut udp_socket = UdpSocket::open().map_err(|_| DnsError::FailedToCreate)?;
+        let mut udp_socket = UdpSocket::new().map_err(|_| DnsError::FailedToCreate)?;
         udp_socket
             .bind(Some(dns))
             .map_err(|_| DnsError::FailedToCreate)?;
@@ -77,7 +77,7 @@ impl DnsResolver {
     /// - `Err(())`: If the hostname could not be resolved
     pub fn resolve(&mut self, host: &str) -> Result<in_addr, DnsError> {
         // connect to the DNS server, if not already
-        if self.udp_socket.get_socket_state() != UdpSocketState::Connected {
+        if self.udp_socket.get_state() != UdpSocketState::Connected {
             self.udp_socket
                 .connect(self.dns)
                 .map_err(|e| DnsError::HostnameResolutionFailed(e.to_string()))?;

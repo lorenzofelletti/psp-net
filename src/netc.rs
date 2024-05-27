@@ -11,9 +11,9 @@ pub use psp::sys::in_addr;
 
 pub use psp::sys::sockaddr;
 
+/// A structure like Linux's `sockaddr_in`
 #[repr(C)]
 #[allow(nonstandard_style)]
-/// Socket address as represented in the PSP internals.
 pub struct sockaddr_in {
     pub sin_len: u8,
     pub sin_family: u8,
