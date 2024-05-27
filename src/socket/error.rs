@@ -22,7 +22,7 @@ pub enum SocketError {
 
 impl Display for SocketError {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 
