@@ -104,14 +104,17 @@ impl TcpSocket {
         }
     }
 
-    /// Return the underlying socket's file descriptor
-    #[allow(unused)]
-    pub fn get_socket(&self) -> i32 {
-        self.fd
-    }
-
     /// Read from the socket
-    fn _read(&self, buf: &mut [u8]) -> Result<usize, SocketError> {
+    ///
+    /// # Returns
+    /// - `Ok(usize)` if the read was successful. The number of bytes read
+    /// - `Err(SocketError)` if the read was unsuccessful.
+    ///
+    /// # Notes
+    /// "Low level" read function. Read data from the socket and store it in
+    /// the buffer. This should not be used if you want to use this socket
+    /// [`EasySocket`] style.
+    pub fn _read(&self, buf: &mut [u8]) -> Result<usize, SocketError> {
         let result =
             unsafe { sys::sceNetInetRecv(self.fd, buf.as_mut_ptr() as *mut c_void, buf.len(), 0) };
         if (result as i32) < 0 {
@@ -122,7 +125,7 @@ impl TcpSocket {
     }
 
     /// Write to the socket
-    fn _write(&mut self, buf: &[u8]) -> Result<usize, SocketError> {
+    pub fn _write(&mut self, buf: &[u8]) -> Result<usize, SocketError> {
         if !self.is_connected {
             return Err(SocketError::NotConnected);
         }
