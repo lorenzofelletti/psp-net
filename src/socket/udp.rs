@@ -15,8 +15,8 @@ use crate::{
 
 use super::{super::netc, error::SocketError, ToSockaddr};
 
-#[derive(Clone, Copy, PartialEq, Eq)]
 /// The state of a [`UdpSocket`]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum UdpSocketState {
     /// The socket is not yet bound (the bind method has not been called)
     Unbound,
@@ -50,8 +50,8 @@ pub struct UdpSocket {
 }
 
 impl UdpSocket {
-    #[allow(dead_code)]
     /// Create a socket
+    #[allow(dead_code)]
     pub fn new() -> Result<UdpSocket, SocketError> {
         let fd = unsafe { sys::sceNetInetSocket(netc::AF_INET as i32, netc::SOCK_DGRAM, 0) };
         if fd < 0 {
@@ -66,7 +66,6 @@ impl UdpSocket {
         }
     }
 
-    #[allow(unused)]
     /// Bind the socket
     ///
     /// # Parameters
@@ -75,6 +74,7 @@ impl UdpSocket {
     /// # Returns
     /// - `Ok(())` if the binding was successful
     /// - `Err(String)` if the binding was unsuccessful.
+    #[allow(unused)]
     pub fn bind(&mut self, addr: Option<SocketAddr>) -> Result<(), SocketError> {
         if self.state != UdpSocketState::Unbound {
             return Err(SocketError::AlreadyBound);
@@ -106,12 +106,12 @@ impl UdpSocket {
         }
     }
 
-    #[allow(unused)]
     /// Connect to a remote host
     ///
     /// # Notes
     /// The socket must be in state [`UdpSocketState::Bound`] to connect to a remote host.
     /// To bind the socket use [`bind()`](UdpSocket::bind).
+    #[allow(unused)]
     pub fn connect(&mut self, addr: SocketAddr) -> Result<(), SocketError> {
         match self.state {
             UdpSocketState::Unbound => return Err(SocketError::NotBound),
@@ -136,8 +136,8 @@ impl UdpSocket {
         }
     }
 
-    #[allow(unused)]
     /// Read from a socket in state [`UdpSocketState::Connected`]
+    #[allow(unused)]
     fn _read(&mut self, buf: &mut [u8]) -> Result<usize, SocketError> {
         if self.state != UdpSocketState::Connected {
             return Err(SocketError::NotConnected);
@@ -152,8 +152,8 @@ impl UdpSocket {
         }
     }
 
-    #[allow(unused)]
     /// Write to a socket in state [`UdpSocketState::Bound`]
+    #[allow(unused)]
     fn _read_from(&mut self, buf: &mut [u8]) -> Result<usize, SocketError> {
         match self.state {
             UdpSocketState::Unbound => return Err(SocketError::NotBound),
@@ -178,8 +178,9 @@ impl UdpSocket {
         }
     }
 
-    #[allow(unused)]
     /// Write to a socket in state [`UdpSocketState::Bound`]
+    #[allow(unused)]
+    #[allow(clippy::cast_possible_truncation)]
     fn _write_to(&mut self, buf: &[u8], len: usize, to: SocketAddr) -> Result<usize, SocketError> {
         match self.state {
             UdpSocketState::Unbound => return Err(SocketError::NotBound),

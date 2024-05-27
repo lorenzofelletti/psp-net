@@ -45,6 +45,13 @@ pub struct DnsResolver {
 
 impl DnsResolver {
     /// Create a new DNS resolver
+    ///
+    /// # Parameters
+    /// - `dns`: The [`SocketAddr`] of the DNS server
+    ///
+    /// # Errors
+    /// - [`DnsError::FailedToCreate`]: The DNS resolver failed to create. This may
+    ///   happen if the socket could not be created or bound to the specified address
     #[allow(unused)]
     pub fn new(dns: SocketAddr) -> Result<Self, DnsError> {
         let mut udp_socket = UdpSocket::new().map_err(|_| DnsError::FailedToCreate)?;
@@ -75,6 +82,11 @@ impl DnsResolver {
     /// # Returns
     /// - `Ok(in_addr)`: The IP address of the hostname
     /// - `Err(())`: If the hostname could not be resolved
+    ///
+    /// # Errors
+    /// - [`DnsError::HostnameResolutionFailed`]: The hostname could not be resolved.
+    ///   This may happen if the connection of the socket fails, or if the DNS server
+    ///   does not answer the query, or any other error occurs
     pub fn resolve(&mut self, host: &str) -> Result<in_addr, DnsError> {
         // connect to the DNS server, if not already
         if self.udp_socket.get_state() != UdpSocketState::Connected {
@@ -158,6 +170,19 @@ impl DnsResolver {
 impl traits::dns::ResolveHostname for DnsResolver {
     type Error = DnsError;
 
+    /// Resolve a hostname to an IP address
+    ///
+    /// # Parameters
+    /// - `host`: The hostname to resolve
+    ///
+    /// # Returns
+    /// - `Ok(SocketAddr)`: The IP address of the hostname
+    /// - `Err(DnsError)`: If the hostname could not be resolved
+    ///
+    /// # Errors
+    /// - [`DnsError::HostnameResolutionFailed`]: The hostname could not be resolved.
+    ///   This may happen if the connection of the socket fails, or if the DNS server
+    ///   does not answer the query, or any other error occurs
     fn resolve_hostname(&mut self, hostname: &str) -> Result<SocketAddr, DnsError> {
         self.resolve(hostname).map(|addr| addr.to_socket_addr())
     }

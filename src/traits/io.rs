@@ -20,6 +20,6 @@ pub trait Open: ErrorType + OptionType {
 /// already close the resources.
 ///
 /// # Notes
-/// EasyScoket types should implement in their [`drop`] method the steps required
+/// [`EasySocket`] types should implement in their [`drop`] method the steps required
 /// to close the acquired resources.
 pub trait EasySocket: Open + Write + Read {}
