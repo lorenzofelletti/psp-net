@@ -156,6 +156,16 @@ impl TcpSocket {
             Ok(result as usize)
         }
     }
+
+    /// Return the underlying socket's file descriptor
+    pub fn fd(&self) -> i32 {
+        self.fd
+    }
+
+    /// Return whether the socket is connected
+    pub fn is_connected(&self) -> bool {
+        self.is_connected
+    }
 }
 
 impl Drop for TcpSocket {
