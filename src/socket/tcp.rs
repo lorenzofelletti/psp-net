@@ -73,9 +73,9 @@ impl TcpSocket {
     ///
     /// # Returns
     /// - `Ok(())` if the connection was successful
+    /// - `Err(String)` if the connection was unsuccessful.
     #[allow(dead_code)]
     #[allow(clippy::cast_possible_truncation)]
-    /// - `Err(String)` if the connection was unsuccessful.
     #[allow(dead_code)]
     pub fn connect(&mut self, remote: SocketAddr) -> Result<(), SocketError> {
         if self.is_connected {
