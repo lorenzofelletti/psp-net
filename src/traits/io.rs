@@ -19,6 +19,10 @@ pub trait Open: ErrorType + OptionType {
 /// As usual in Rust, no `close` method is needed, as dropping an object should
 /// already close the resources.
 ///
+/// EasySockets methods to be used are [`open`](Open::open), [`read`](Read::read),
+/// [`write`](Write::write) and [`flush`](Write::flush). Likely, a `new` method is
+/// needed befor opening the socket, but this depends on the implementation.
+///
 /// # Notes
 /// [`EasySocket`] types should implement in their [`drop`] method the steps required
 /// to close the acquired resources.

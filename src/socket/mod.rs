@@ -24,6 +24,7 @@ fn socket_addr_v4_to_sockaddr(addr: SocketAddrV4) -> sockaddr {
     unsafe { core::mem::transmute::<netc::sockaddr_in, netc::sockaddr>(sockaddr_in) }
 }
 
+/// Convert to a [`sockaddr`]
 pub trait ToSockaddr {
     fn to_sockaddr(&self) -> sockaddr;
 }
@@ -34,6 +35,7 @@ impl ToSockaddr for SocketAddrV4 {
     }
 }
 
+/// Convert to a [`SocketAddr`]
 pub trait ToSocketAddr {
     fn to_socket_addr(&self) -> SocketAddr;
 }

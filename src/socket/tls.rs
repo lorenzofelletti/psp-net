@@ -22,7 +22,9 @@ lazy_static::lazy_static! {
 /// A TLS socket.
 /// This is a wrapper around a [`TcpSocket`] that provides a TLS connection.
 pub struct TlsSocket<'a> {
+    /// The TLS connection
     tls_connection: TlsConnection<'a, TcpSocket, Aes128GcmSha256>,
+    /// The TLS config
     tls_config: TlsConfig<'a, Aes128GcmSha256>,
 }
 
