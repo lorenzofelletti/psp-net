@@ -7,6 +7,9 @@ pub trait OptionType {
 /// Type implementing this trait support a Open semantics.
 pub trait Open: ErrorType + OptionType {
     /// Open a resource, using options for configuration.
+    ///
+    /// # Errors
+    /// This function can return an error if the resource could not be opened.
     fn open(&mut self, options: Self::Options) -> Result<(), Self::Error>
     where
         Self: Sized;
@@ -19,7 +22,7 @@ pub trait Open: ErrorType + OptionType {
 /// As usual in Rust, no `close` method is needed, as dropping an object should
 /// already close the resources.
 ///
-/// EasySockets methods to be used are [`open`](Open::open), [`read`](Read::read),
+/// `EasySockets` methods to be used are [`open`](Open::open), [`read`](Read::read),
 /// [`write`](Write::write) and [`flush`](Write::flush). Likely, a `new` method is
 /// needed befor opening the socket, but this depends on the implementation.
 ///

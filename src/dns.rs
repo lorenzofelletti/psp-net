@@ -22,6 +22,7 @@ lazy_static::lazy_static! {
 
 /// Create a DNS query for an A record
 #[allow(unused)]
+#[must_use]
 pub fn create_a_type_query(domain: &str) -> Question {
     Question::new(domain, dns_protocol::ResourceType::A, 1)
 }
@@ -39,7 +40,9 @@ pub enum DnsError {
 
 /// A DNS resolver
 pub struct DnsResolver {
+    /// The UDP socket that is used to send and receive DNS messages
     udp_socket: UdpSocket,
+    /// The DNS server address
     dns: SocketAddr,
 }
 
@@ -64,6 +67,10 @@ impl DnsResolver {
 
     /// Try to create a new DNS resolver with default settings
     /// The default settings are to use Google's DNS server at `8.8.8.8:53`
+    ///
+    /// # Errors
+    /// - [`DnsError::FailedToCreate`]: The DNS resolver failed to create. This may
+    ///   happen if the socket could not be created or bound to the specified address
     pub fn try_default() -> Result<Self, DnsError> {
         let dns = *GOOGLE_DNS_HOST;
         let mut udp_socket = UdpSocket::new().map_err(|_| DnsError::FailedToCreate)?;

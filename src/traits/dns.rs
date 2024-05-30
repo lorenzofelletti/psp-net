@@ -8,8 +8,14 @@ use psp::sys::in_addr;
 /// Trait for resolving hostnames
 ///
 /// A type implementing this trait can resolve a hostname to an IP address.
+///
+
 pub trait ResolveHostname {
     type Error: Debug;
+    /// Resolve a hostname to an IP address
+    ///
+    /// # Errors
+    /// An error will be returned if the hostname could not be resolved.
     fn resolve_hostname(&mut self, hostname: &str) -> Result<SocketAddr, Self::Error>;
 }
 
@@ -18,6 +24,10 @@ pub trait ResolveHostname {
 /// A type implementing this trait can resolve an IP address to a hostname.
 pub trait ResolveAddr {
     type Error: Debug;
+    /// Resolve an IP address to a hostname
+    ///
+    /// # Errors
+    /// An error will be returned if the IP address could not be resolved.
     fn resolve_addr(&mut self, addr: in_addr) -> Result<String, Self::Error>;
 }
 
