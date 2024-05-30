@@ -10,6 +10,8 @@ pub enum NetError {
     InitFailed(String, i32),
     /// An error occurred when using a net function
     Error(String, i32),
+    /// Net config Do not exist
+    NetConfigNotExist,
 }
 
 impl NetError {
@@ -90,11 +92,10 @@ pub fn net_init() -> Result<(), NetError> {
     Ok(())
 }
 
-/// Select net config
+/// Check existence of net config
 ///
 /// # Errors
-/// This function will return an error if selection fails.
-/// The error, if any, will always be [`NetError::Error`].
+/// - [`NetError::NetConfigNotExist`] if the net config does not exist
 ///
 /// # Notes
 /// The netconfigs start from 1.
@@ -103,23 +104,23 @@ pub fn net_init() -> Result<(), NetError> {
 /// [initialised](crate::utils::net_init) first.
 #[allow(unused)]
 #[inline]
-pub fn select_netconfig(id: i32) -> Result<(), NetError> {
+pub fn check_netconfig_existence(id: i32) -> Result<(), NetError> {
     unsafe {
         let res = psp::sys::sceUtilityCheckNetParam(id);
         if res != 0 {
-            return Err(NetError::error("sceUtilityCheckNetParam", res));
+            return Err(NetError::NetConfigNotExist);
         }
     }
 
     Ok(())
 }
 
-/// Select first net config
+/// Check existence of first net config
 ///
 /// # Errors
-/// This function will return an error if selection fails
+/// Same as [check_netconfig_existence](crate::utils::check_netconfig_existence)
 #[allow(unused)]
 #[inline]
-pub fn select_first_netconfig() -> Result<(), NetError> {
-    select_netconfig(1)
+pub fn check_first_netconfig_existence() -> Result<(), NetError> {
+    check_netconfig_existence(1)
 }

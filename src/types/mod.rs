@@ -20,6 +20,7 @@ impl OptionType for SocketOptions {
 
 impl SocketOptions {
     /// Create a new socket options
+    #[must_use]
     pub fn new(remote: SocketAddr) -> SocketOptions {
         Self { remote }
     }
@@ -42,11 +43,13 @@ pub struct TlsSocketOptions {
 
 impl TlsSocketOptions {
     /// Create a new socket options
+    #[must_use]
     pub fn new(seed: u64) -> Self {
         Self { seed }
     }
 
     /// Get the seed
+    #[must_use]
     pub fn seed(&self) -> u64 {
         self.seed
     }

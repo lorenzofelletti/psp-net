@@ -92,16 +92,23 @@ impl<'a> TlsSocket<'a> {
     /// let mut write_buf = TlsSocket::new_buffer();
     /// let tls_socket = TlsSocket::new(tcp_socket, &mut read_buf, &mut write_buf, "example.com", None);
     /// ```
+    #[must_use]
     pub fn new_buffer() -> [u8; 16_384] {
         [0; 16_384]
     }
 
     /// Write all data to the TLS connection.
+    ///
+    /// # Errors
+    /// [`embedded_tls::TlsError`] if the write fails.
     pub fn write_all(&mut self, buf: &[u8]) -> Result<(), embedded_tls::TlsError> {
         self.tls_connection.write_all(buf)
     }
 
     /// Read data from the TLS connection and converts it to a [`String`].
+    ///
+    /// # Errors
+    /// [`embedded_tls::TlsError`] if the read fails.
     pub fn read_string(&mut self) -> Result<String, embedded_tls::TlsError> {
         let mut buf = Self::new_buffer();
         let _ = self.read(&mut buf)?;

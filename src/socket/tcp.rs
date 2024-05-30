@@ -52,9 +52,15 @@ pub struct TcpSocket {
 
 impl TcpSocket {
     /// Create a TCP socket
+    ///
+    /// # Returns
+    /// A new TCP socket
+    ///
+    /// # Errors
+    /// - [`SocketError::Errno`] if the socket could not be created
     #[allow(dead_code)]
     pub fn new() -> Result<TcpSocket, SocketError> {
-        let fd = unsafe { sys::sceNetInetSocket(netc::AF_INET as i32, netc::SOCK_STREAM, 0) };
+        let fd = unsafe { sys::sceNetInetSocket(i32::from(netc::AF_INET), netc::SOCK_STREAM, 0) };
         if fd < 0 {
             Err(SocketError::Errno(unsafe { sys::sceNetInetGetErrno() }))
         } else {
@@ -74,8 +80,11 @@ impl TcpSocket {
     /// # Returns
     /// - `Ok(())` if the connection was successful
     /// - `Err(String)` if the connection was unsuccessful.
+    ///
+    /// # Errors
+    /// - [`SocketError::UnsupportedAddressFamily`] if the address family is not supported (only IPv4 is supported)
+    /// - Any other [`SocketError`] if the connection was unsuccessful
     #[allow(dead_code)]
-    #[allow(clippy::cast_possible_truncation)]
     #[allow(dead_code)]
     pub fn connect(&mut self, remote: SocketAddr) -> Result<(), SocketError> {
         if self.is_connected {
@@ -110,13 +119,17 @@ impl TcpSocket {
     /// - `Ok(usize)` if the read was successful. The number of bytes read
     /// - `Err(SocketError)` if the read was unsuccessful.
     ///
+    /// # Errors
+    /// - A [`SocketError`] if the read was unsuccessful
+    ///
     /// # Notes
     /// "Low level" read function. Read data from the socket and store it in
     /// the buffer. This should not be used if you want to use this socket
     /// [`EasySocket`] style.
     pub fn _read(&self, buf: &mut [u8]) -> Result<usize, SocketError> {
-        let result =
-            unsafe { sys::sceNetInetRecv(self.fd, buf.as_mut_ptr() as *mut c_void, buf.len(), 0) };
+        let result = unsafe {
+            sys::sceNetInetRecv(self.fd, buf.as_mut_ptr().cast::<c_void>(), buf.len(), 0)
+        };
         if (result as i32) < 0 {
             Err(SocketError::Errno(unsafe { sys::sceNetInetGetErrno() }))
         } else {
@@ -125,6 +138,9 @@ impl TcpSocket {
     }
 
     /// Write to the socket
+    ///
+    /// # Errors
+    /// - A [`SocketError`] if the write was unsuccessful
     pub fn _write(&mut self, buf: &[u8]) -> Result<usize, SocketError> {
         if !self.is_connected {
             return Err(SocketError::NotConnected);
@@ -149,7 +165,7 @@ impl TcpSocket {
         let result = unsafe {
             sys::sceNetInetSend(
                 self.fd,
-                self.buffer.as_slice().as_ptr() as *const c_void,
+                self.buffer.as_slice().as_ptr().cast::<c_void>(),
                 self.buffer.len(),
                 0,
             )
@@ -163,11 +179,13 @@ impl TcpSocket {
     }
 
     /// Return the underlying socket's file descriptor
+    #[must_use]
     pub fn fd(&self) -> i32 {
         self.fd
     }
 
     /// Return whether the socket is connected
+    #[must_use]
     pub fn is_connected(&self) -> bool {
         self.is_connected
     }
@@ -203,6 +221,10 @@ impl Open for TcpSocket {
 
 impl Read for TcpSocket {
     /// Read from the socket
+    ///
+    /// # Errors
+    /// - [`SocketError::NotConnected`] if the socket is not connected
+    /// - A [`SocketError`] if the read was unsuccessful
     fn read<'m>(&'m mut self, buf: &'m mut [u8]) -> Result<usize, Self::Error> {
         if !self.is_connected {
             return Err(SocketError::NotConnected);
@@ -213,6 +235,10 @@ impl Read for TcpSocket {
 
 impl Write for TcpSocket {
     /// Write to the socket
+    ///
+    /// # Errors
+    /// - [`SocketError::NotConnected`] if the socket is not connected
+    /// - A [`SocketError`] if the write was unsuccessful
     fn write<'m>(&'m mut self, buf: &'m [u8]) -> Result<usize, Self::Error> {
         if !self.is_connected {
             return Err(SocketError::NotConnected);
@@ -221,6 +247,9 @@ impl Write for TcpSocket {
     }
 
     /// Flush the socket
+    ///
+    /// # Errors
+    /// - A [`SocketError`] if the flush was unsuccessful
     fn flush(&mut self) -> Result<(), SocketError> {
         self._flush()
     }
