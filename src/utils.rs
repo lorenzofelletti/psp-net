@@ -118,7 +118,7 @@ pub fn check_netconfig_existence(id: i32) -> Result<(), NetError> {
 /// Check existence of first net config
 ///
 /// # Errors
-/// Same as [check_netconfig_existence](crate::utils::check_netconfig_existence)
+/// Same as [`check_netconfig_existence`](crate::utils::check_netconfig_existence)
 #[allow(unused)]
 #[inline]
 pub fn check_first_netconfig_existence() -> Result<(), NetError> {
