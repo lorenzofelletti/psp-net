@@ -1,4 +1,4 @@
-use embedded_nal::{Ipv4Addr, SocketAddr, SocketAddrV4};
+use embedded_nal::{Ipv4Addr, SocketAddrV4};
 use psp::sys::{in_addr, sockaddr};
 
 use super::netc;
@@ -26,6 +26,7 @@ fn socket_addr_v4_to_sockaddr(addr: SocketAddrV4) -> sockaddr {
 
 /// Convert to a [`sockaddr`]
 pub trait ToSockaddr {
+    /// Convert to a [`sockaddr`]
     fn to_sockaddr(&self) -> sockaddr;
 }
 
@@ -37,6 +38,7 @@ impl ToSockaddr for SocketAddrV4 {
 
 /// Convert to a [`SocketAddr`]
 pub trait ToSocketAddr {
+    /// Convert to a [`SocketAddr`]
     fn to_socket_addr(&self) -> SocketAddr;
 }
 
@@ -63,3 +65,6 @@ impl ToSocketAddr for sockaddr {
         ))
     }
 }
+
+// re-exports
+pub type SocketAddr = embedded_nal::SocketAddr;

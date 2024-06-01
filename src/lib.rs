@@ -10,11 +10,3 @@ pub mod socket;
 pub mod traits;
 pub mod types;
 pub mod utils;
-
-// re-exports
-pub type SocketAddr = embedded_nal::SocketAddr;
-pub type TlsError = embedded_tls::TlsError;
-
-pub trait Write = embedded_io::Write;
-pub trait Read = embedded_io::Read;
-pub trait ErrorType = embedded_io::ErrorType;

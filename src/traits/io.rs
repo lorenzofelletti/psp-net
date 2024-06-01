@@ -1,5 +1,3 @@
-use embedded_io::{ErrorType, Read, Write};
-
 pub trait OptionType {
     type Options: ?Sized;
 }
@@ -30,3 +28,8 @@ pub trait Open: ErrorType + OptionType {
 /// [`EasySocket`] types should implement in their [`drop`] method the steps required
 /// to close the acquired resources.
 pub trait EasySocket: Open + Write + Read {}
+
+// re-exports
+pub trait Write = embedded_io::Write;
+pub trait Read = embedded_io::Read;
+pub trait ErrorType = embedded_io::ErrorType;
