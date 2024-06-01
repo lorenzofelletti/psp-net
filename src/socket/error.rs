@@ -35,3 +35,6 @@ impl embedded_io::Error for SocketError {
         }
     }
 }
+
+// re-exports
+pub type TlsError = embedded_tls::TlsError;

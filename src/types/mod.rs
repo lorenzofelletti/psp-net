@@ -1,4 +1,4 @@
-use crate::{traits::io::OptionType, SocketAddr};
+use crate::socket::SocketAddr;
 
 /// Socket options, such as remote address to connect to.
 ///
@@ -12,10 +12,6 @@ use crate::{traits::io::OptionType, SocketAddr};
 pub struct SocketOptions {
     /// Remote address to connect to
     pub remote: SocketAddr,
-}
-
-impl OptionType for SocketOptions {
-    type Options = Self;
 }
 
 impl SocketOptions {
