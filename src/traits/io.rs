@@ -6,8 +6,15 @@ pub trait OptionType {
 pub trait Open<'a>: ErrorType + OptionType {
     /// Open a resource, using options for configuration.
     ///
+    /// # Arguments
+    /// - `options`: The options to use to configure the TLS connection
+    ///
     /// # Errors
     /// This function can return an error if the resource could not be opened.
+    ///
+    /// # Notes
+    /// See [`TlsSocketOptions`](crate::types::TlsSocketOptions) for more information
+    /// on the options you can pass.
     fn open(self, options: &'a Self::Options<'a>) -> Result<Self, Self::Error>
     where
         Self: Sized;

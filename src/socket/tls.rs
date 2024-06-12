@@ -35,8 +35,6 @@ impl<'a> TlsSocket<'a> {
     /// - `socket`: The TCP socket to use for the TLS connection
     /// - `record_read_buf`: A buffer to use for reading records
     /// - `record_write_buf`: A buffer to use for writing records
-    /// - `server_name`: The server name to connect to (e.g. "example.com")
-    /// - `cert`: An optional certificate to use for the connection
     ///
     /// # Returns
     /// A new TLS socket.
@@ -126,13 +124,21 @@ where
 
         self.tls_config = self.tls_config.with_server_name(options.server_name());
 
-        if options.enable_rsa_signatures {
+        if options.rsa_signatures_enabled() {
             self.tls_config = self.tls_config.enable_rsa_signatures();
         }
 
-        if let Some(cert) = &options.cert {
+        if options.reset_max_fragment_length() {
+            self.tls_config = self.tls_config.reset_max_fragment_length();
+        }
+
+        if let Some(cert) = options.cert() {
             // self.certificate = Some(Certificate::RawPublicKey(cert));
             self.tls_config = self.tls_config.with_cert(cert.clone());
+        }
+
+        if let Some(ca) = options.ca() {
+            self.tls_config = self.tls_config.with_ca(ca.clone());
         }
 
         let tls_context = TlsContext::new(&self.tls_config, &mut rng);

@@ -32,25 +32,30 @@ impl SocketOptions {
 
 #[derive(Clone, Debug)]
 /// TLS socket options
-///
-/// # Fields
-/// - [`seed`](Self::seed): Seed for the RNG
 pub struct TlsSocketOptions<'a> {
-    pub seed: u64,
-    pub server_name: String,
-    pub(crate) cert: Option<Certificate<'a>>,
-    pub(crate) enable_rsa_signatures: bool,
+    seed: u64,
+    server_name: String,
+    cert: Option<Certificate<'a>>,
+    ca: Option<Certificate<'a>>,
+    enable_rsa_signatures: bool,
+    reset_max_fragment_length: bool,
 }
 
 impl<'a> TlsSocketOptions<'a> {
     /// Create a new socket options
+    ///
+    /// # Arguments
+    /// - `seed`: The seed to use for the RNG
+    /// - `server_name`: The server name to use
     #[must_use]
     pub fn new(seed: u64, server_name: String) -> Self {
         Self {
             seed,
             server_name,
             cert: None,
+            ca: None,
             enable_rsa_signatures: true,
+            reset_max_fragment_length: false,
         }
     }
 
@@ -79,6 +84,45 @@ impl<'a> TlsSocketOptions<'a> {
     #[must_use]
     pub fn server_name(&self) -> &str {
         &self.server_name
+    }
+
+    /// Get the certificate
+    #[must_use]
+    pub fn cert(&self) -> Option<&Certificate<'a>> {
+        self.cert.as_ref()
+    }
+
+    /// Return whether RSA signatures are enabled
+    #[must_use]
+    pub fn rsa_signatures_enabled(&self) -> bool {
+        self.enable_rsa_signatures
+    }
+
+    /// Return whether the max fragment length should be reset
+    #[must_use]
+    pub fn reset_max_fragment_length(&self) -> bool {
+        self.reset_max_fragment_length
+    }
+
+    /// Set whether the max fragment length should be reset
+    ///
+    /// By default, the max fragment length is not reset.
+    pub fn set_reset_max_fragment_length(&mut self, reset_max_fragment_length: bool) {
+        self.reset_max_fragment_length = reset_max_fragment_length;
+    }
+
+    /// Get the CA
+    #[must_use]
+    pub fn ca(&self) -> Option<&Certificate<'a>> {
+        self.ca.as_ref()
+    }
+
+    /// Set the CA (certificate authority)
+    ///
+    /// # Arguments
+    /// - `ca`: The CA
+    pub fn set_ca(&mut self, ca: Option<Certificate<'a>>) {
+        self.ca = ca;
     }
 }
 
