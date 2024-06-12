@@ -30,8 +30,11 @@ impl SocketOptions {
     }
 }
 
+/// TLS socket options.
+///
+/// This is used by [`TlsSocket`](super::socket::tls::TlsSocket) when used as a
+/// [`EasySocket`](super::traits::io::EasySocket).
 #[derive(Clone, Debug)]
-/// TLS socket options
 pub struct TlsSocketOptions<'a> {
     seed: u64,
     server_name: String,
