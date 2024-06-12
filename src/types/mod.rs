@@ -1,4 +1,4 @@
-use alloc::{string::String, vec::Vec};
+use alloc::string::String;
 
 use crate::socket::SocketAddr;
 
@@ -30,26 +30,26 @@ impl SocketOptions {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 /// TLS socket options
 ///
 /// # Fields
 /// - [`seed`](Self::seed): Seed for the RNG
-pub struct TlsSocketOptions {
+pub struct TlsSocketOptions<'a> {
     pub seed: u64,
     pub server_name: String,
-    pub(crate) cert: Option<Vec<u8>>,
+    pub(crate) cert: Option<Certificate<'a>>,
     pub(crate) enable_rsa_signatures: bool,
 }
 
-impl<'a> TlsSocketOptions {
+impl<'a> TlsSocketOptions<'a> {
     /// Create a new socket options
     #[must_use]
-    pub fn new(seed: u64, server_name: String, cert: Option<Vec<u8>>) -> Self {
+    pub fn new(seed: u64, server_name: String) -> Self {
         Self {
             seed,
             server_name,
-            cert,
+            cert: None,
             enable_rsa_signatures: true,
         }
     }
@@ -61,12 +61,22 @@ impl<'a> TlsSocketOptions {
         self.enable_rsa_signatures = false;
     }
 
+    /// Set the certificate
+    ///
+    /// # Arguments
+    /// - `cert`: The certificate
+    pub fn set_cert(&mut self, cert: Certificate<'a>) {
+        self.cert = Some(cert);
+    }
+
     /// Get the seed
     #[must_use]
     pub fn seed(&self) -> u64 {
         self.seed
     }
 
+    /// Get the server name
+    #[must_use]
     pub fn server_name(&self) -> &str {
         &self.server_name
     }

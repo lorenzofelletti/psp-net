@@ -1,8 +1,6 @@
 use alloc::string::String;
 use embedded_io::{ErrorType, Read, Write};
-use embedded_tls::{
-    blocking::TlsConnection, Aes128GcmSha256, Certificate, NoVerify, TlsConfig, TlsContext,
-};
+use embedded_tls::{blocking::TlsConnection, Aes128GcmSha256, NoVerify, TlsConfig, TlsContext};
 
 use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
@@ -50,7 +48,7 @@ impl<'a> TlsSocket<'a> {
     /// ```no_run
     /// let mut read_buf = TlsSocket::new_buffer();
     /// let mut write_buf = TlsSocket::new_buffer();
-    /// let tls_socket = TlsSocket::new(tcp_socket, &mut read_buf, &mut write_buf, "example.com", None);
+    /// let tls_socket = TlsSocket::new(tcp_socket, &mut read_buf, &mut write_buf);
     /// ```
     ///
     /// # Notes
@@ -81,7 +79,7 @@ impl<'a> TlsSocket<'a> {
     /// ```no_run
     /// let mut read_buf = TlsSocket::new_buffer();
     /// let mut write_buf = TlsSocket::new_buffer();
-    /// let tls_socket = TlsSocket::new(tcp_socket, &mut read_buf, &mut write_buf, "example.com", None);
+    /// let tls_socket = TlsSocket::new(tcp_socket, &mut read_buf, &mut write_buf);
     /// ```
     #[must_use]
     pub fn new_buffer() -> [u8; 16_384] {
@@ -115,7 +113,7 @@ impl ErrorType for TlsSocket<'_> {
 }
 
 impl OptionType for TlsSocket<'_> {
-    type Options<'a> = TlsSocketOptions;
+    type Options<'a> = TlsSocketOptions<'a>;
 }
 
 impl<'a, 'b> Open<'a> for TlsSocket<'b>
@@ -134,7 +132,7 @@ where
 
         if let Some(cert) = &options.cert {
             // self.certificate = Some(Certificate::RawPublicKey(cert));
-            self.tls_config = self.tls_config.with_cert(Certificate::RawPublicKey(cert));
+            self.tls_config = self.tls_config.with_cert(cert.clone());
         }
 
         let tls_context = TlsContext::new(&self.tls_config, &mut rng);
