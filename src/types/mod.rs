@@ -13,7 +13,7 @@ use crate::socket::SocketAddr;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SocketOptions {
     /// Remote address to connect to
-    pub remote: SocketAddr,
+    remote: SocketAddr,
 }
 
 impl SocketOptions {
