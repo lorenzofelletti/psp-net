@@ -204,18 +204,18 @@ impl ErrorType for TcpSocket {
 }
 
 impl OptionType for TcpSocket {
-    type Options = SocketOptions;
+    type Options<'a> = SocketOptions;
 }
 
-impl Open for TcpSocket {
+impl<'a> Open<'a> for TcpSocket {
     /// Return a TCP socket connected to the remote specified in `options`
-    fn open(&mut self, options: Self::Options) -> Result<(), Self::Error>
+    fn open(mut self, options: &'a Self::Options<'a>) -> Result<Self, Self::Error>
     where
         Self: Sized,
     {
         self.connect(options.remote())?;
 
-        Ok(())
+        Ok(self)
     }
 }
 
