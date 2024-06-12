@@ -360,20 +360,20 @@ impl Drop for UdpSocket {
 }
 
 impl OptionType for UdpSocket {
-    type Options = SocketOptions;
+    type Options<'a> = SocketOptions;
 }
 
 impl ErrorType for UdpSocket {
     type Error = SocketError;
 }
 
-impl Open for UdpSocket {
+impl<'a> Open<'a> for UdpSocket {
     /// Open the socket
-    fn open(&mut self, options: Self::Options) -> Result<(), Self::Error> {
+    fn open(mut self, options: &'a Self::Options<'a>) -> Result<Self, Self::Error> {
         self.bind(None)?;
         self.connect(options.remote())?;
 
-        Ok(())
+        Ok(self)
     }
 }
 

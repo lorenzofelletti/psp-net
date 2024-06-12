@@ -26,6 +26,7 @@ pub struct TlsSocket<'a> {
     tls_connection: TlsConnection<'a, TcpSocket, Aes128GcmSha256>,
     /// The TLS config
     tls_config: TlsConfig<'a, Aes128GcmSha256>,
+    // certificate: Option<Certificate<'a>>,
 }
 
 impl<'a> TlsSocket<'a> {
@@ -58,25 +59,15 @@ impl<'a> TlsSocket<'a> {
         socket: TcpSocket,
         record_read_buf: &'a mut [u8],
         record_write_buf: &'a mut [u8],
-        server_name: &'a str,
-        cert: Option<&'a [u8]>,
     ) -> Self {
-        let tls_config: TlsConfig<'_, Aes128GcmSha256> = match cert {
-            Some(cert) => TlsConfig::new()
-                .with_server_name(server_name)
-                .with_cert(Certificate::RawPublicKey(cert))
-                .enable_rsa_signatures(),
-            None => TlsConfig::new()
-                .with_server_name(server_name)
-                .enable_rsa_signatures(),
-        };
+        let tls_config: TlsConfig<'_, Aes128GcmSha256> = TlsConfig::new();
 
         let tls_connection: TlsConnection<TcpSocket, Aes128GcmSha256> =
             TlsConnection::new(socket, record_read_buf, record_write_buf);
-
         TlsSocket {
             tls_connection,
             tls_config,
+            // certificate: None,
         }
     }
 
@@ -124,16 +115,33 @@ impl ErrorType for TlsSocket<'_> {
 }
 
 impl OptionType for TlsSocket<'_> {
-    type Options = TlsSocketOptions;
+    type Options<'a> = TlsSocketOptions;
 }
 
-impl Open for TlsSocket<'_> {
+impl<'a, 'b> Open<'a> for TlsSocket<'b>
+where
+    'a: 'b,
+{
     /// Open the TLS connection.
-    fn open(&mut self, options: Self::Options) -> Result<(), embedded_tls::TlsError> {
+    fn open(mut self, options: &'a Self::Options<'a>) -> Result<Self, embedded_tls::TlsError> {
         let mut rng = ChaCha20Rng::seed_from_u64(options.seed());
+
+        self.tls_config = self.tls_config.with_server_name(options.server_name());
+
+        if options.enable_rsa_signatures {
+            self.tls_config = self.tls_config.enable_rsa_signatures();
+        }
+
+        if let Some(cert) = &options.cert {
+            // self.certificate = Some(Certificate::RawPublicKey(cert));
+            self.tls_config = self.tls_config.with_cert(Certificate::RawPublicKey(cert));
+        }
+
         let tls_context = TlsContext::new(&self.tls_config, &mut rng);
         self.tls_connection
-            .open::<ChaCha20Rng, NoVerify>(tls_context)
+            .open::<ChaCha20Rng, NoVerify>(tls_context)?;
+
+        Ok(self)
     }
 }
 

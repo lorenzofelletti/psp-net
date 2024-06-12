@@ -1,14 +1,14 @@
 pub trait OptionType {
-    type Options: ?Sized;
+    type Options<'b>: ?Sized;
 }
 
 /// Type implementing this trait support a Open semantics.
-pub trait Open: ErrorType + OptionType {
+pub trait Open<'a>: ErrorType + OptionType {
     /// Open a resource, using options for configuration.
     ///
     /// # Errors
     /// This function can return an error if the resource could not be opened.
-    fn open(&mut self, options: Self::Options) -> Result<(), Self::Error>
+    fn open(self, options: &'a Self::Options<'a>) -> Result<Self, Self::Error>
     where
         Self: Sized;
 }
@@ -27,7 +27,7 @@ pub trait Open: ErrorType + OptionType {
 /// # Notes
 /// [`EasySocket`] types should implement in their [`drop`] method the steps required
 /// to close the acquired resources.
-pub trait EasySocket: Open + Write + Read {}
+pub trait EasySocket: for<'a> Open<'a> + Write + Read {}
 
 // re-exports
 pub trait Write = embedded_io::Write;

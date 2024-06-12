@@ -1,3 +1,5 @@
+use alloc::{string::String, vec::Vec};
+
 use crate::socket::SocketAddr;
 
 /// Socket options, such as remote address to connect to.
@@ -35,13 +37,28 @@ impl SocketOptions {
 /// - [`seed`](Self::seed): Seed for the RNG
 pub struct TlsSocketOptions {
     pub seed: u64,
+    pub server_name: String,
+    pub(crate) cert: Option<Vec<u8>>,
+    pub(crate) enable_rsa_signatures: bool,
 }
 
-impl TlsSocketOptions {
+impl<'a> TlsSocketOptions {
     /// Create a new socket options
     #[must_use]
-    pub fn new(seed: u64) -> Self {
-        Self { seed }
+    pub fn new(seed: u64, server_name: String, cert: Option<Vec<u8>>) -> Self {
+        Self {
+            seed,
+            server_name,
+            cert,
+            enable_rsa_signatures: true,
+        }
+    }
+
+    /// Disable RSA signatures
+    ///
+    /// By default, RSA signatures are enabled.
+    pub fn disable_rsa_signatures(&mut self) {
+        self.enable_rsa_signatures = false;
     }
 
     /// Get the seed
@@ -49,4 +66,11 @@ impl TlsSocketOptions {
     pub fn seed(&self) -> u64 {
         self.seed
     }
+
+    pub fn server_name(&self) -> &str {
+        &self.server_name
+    }
 }
+
+// re-exports
+pub type Certificate<'a> = embedded_tls::Certificate<'a>;
