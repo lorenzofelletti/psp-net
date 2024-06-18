@@ -383,7 +383,7 @@ impl Read for UdpSocket {
     /// # Notes
     /// If the socket is in state [`UdpSocketState::Unbound`] this will return an error,
     /// otherwise it will attempt to read from the socket. You can check the state of the socket
-    /// using [`get_socket_state`](Self::get_socket_state).
+    /// using [`get_state`](Self::get_state).
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
         match self.get_state() {
             UdpSocketState::Unbound => Err(SocketError::NotBound),

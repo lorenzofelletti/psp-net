@@ -120,7 +120,7 @@ pub fn check_netconfig_existence(id: i32) -> Result<(), NetError> {
 /// Check existence of first net config
 ///
 /// # Errors
-/// Same as [`check_netconfig_existence`](crate::utils::check_netconfig_existence)
+/// Same as [`check_netconfig_existence`]
 #[allow(unused)]
 #[inline]
 pub fn check_first_netconfig_existence() -> Result<(), NetError> {
@@ -140,7 +140,7 @@ pub fn check_first_netconfig_existence() -> Result<(), NetError> {
 /// access point in the netconfig.
 ///
 /// This function does not block until the connection is established.
-/// Use [`block_until_connected`](crate::utils::block_until_connected) right after
+/// Use [`block_until_connected`] right after
 /// this function to block until the connection is established.
 pub fn init_connection_to_access_point(connection_id: i32) -> Result<(), NetError> {
     unsafe {
@@ -163,7 +163,7 @@ pub fn init_connection_to_access_point(connection_id: i32) -> Result<(), NetErro
 /// - `desist_after`: The number of times to poll the state before desisting
 ///
 /// # Errors
-/// Same as [`init_connection_to_access_point`](crate::utils::init_connection_to_access_point)
+/// Same as [`init_connection_to_access_point`]
 #[inline]
 pub fn block_until_connected(desist_after: usize) -> Result<(), NetError> {
     let mut state: psp::sys::ApctlState = unsafe { core::mem::zeroed() };
