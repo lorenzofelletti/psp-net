@@ -22,7 +22,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: "$env.TOOLCHAIN_VERSION"
+          toolchain: ${{ env.TOOLCHAIN_VERSION }}
           override: true
 
       - run: rustup component add rustfmt
@@ -40,7 +40,7 @@ jobs:
 
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: "$env.TOOLCHAIN_VERSION"
+          toolchain: ${{ env.TOOLCHAIN_VERSION }}
           components: clippy
           override: true
 
