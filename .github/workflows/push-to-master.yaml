@@ -11,6 +11,7 @@ jobs:
 
     env:
       CARGO_TERM_COLOR: always
+      TOOLCHAIN_VERSION: nightly-2024-06-01
 
     steps:
       - uses: actions/checkout@v4
@@ -18,7 +19,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
+          toolchain: ${{ env.TOOLCHAIN_VERSION }}
           override: true
 
       - name: Build
