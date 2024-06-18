@@ -1,5 +1,6 @@
 #![no_std]
 #![feature(trait_alias)]
+#![doc = include_str!("../README.md")]
 
 extern crate alloc;
 
