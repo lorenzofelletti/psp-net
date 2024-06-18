@@ -9,7 +9,7 @@ use core::ffi::c_void;
 
 use crate::traits::io::{EasySocket, Open, OptionType};
 use crate::traits::SocketBuffer;
-use crate::types::SocketOptions;
+use crate::types::{SocketOptions, SocketRecvFlags, SocketSendFlags};
 
 use super::super::netc;
 
@@ -48,6 +48,10 @@ pub struct TcpSocket {
     is_connected: bool,
     /// The buffer to store data to send
     buffer: Box<dyn SocketBuffer>,
+    /// flags for send calls
+    send_flags: SocketSendFlags,
+    /// flags for recv calls
+    recv_flags: SocketRecvFlags,
 }
 
 impl TcpSocket {
@@ -68,6 +72,8 @@ impl TcpSocket {
                 fd,
                 is_connected: false,
                 buffer: Box::<Vec<u8>>::default(),
+                send_flags: SocketSendFlags::empty(),
+                recv_flags: SocketRecvFlags::empty(),
             })
         }
     }
@@ -128,7 +134,12 @@ impl TcpSocket {
     /// [`EasySocket`] style.
     pub fn _read(&self, buf: &mut [u8]) -> Result<usize, SocketError> {
         let result = unsafe {
-            sys::sceNetInetRecv(self.fd, buf.as_mut_ptr().cast::<c_void>(), buf.len(), 0)
+            sys::sceNetInetRecv(
+                self.fd,
+                buf.as_mut_ptr().cast::<c_void>(),
+                buf.len(),
+                self.recv_flags.as_i32(),
+            )
         };
         if (result as i32) < 0 {
             Err(SocketError::Errno(unsafe { sys::sceNetInetGetErrno() }))
@@ -167,7 +178,7 @@ impl TcpSocket {
                 self.fd,
                 self.buffer.as_slice().as_ptr().cast::<c_void>(),
                 self.buffer.len(),
-                0,
+                self.send_flags.as_i32(),
             )
         };
         if (result as i32) < 0 {
@@ -188,6 +199,30 @@ impl TcpSocket {
     #[must_use]
     pub fn is_connected(&self) -> bool {
         self.is_connected
+    }
+
+    /// Flags used when sending data
+    #[must_use]
+    pub fn send_flags(&self) -> SocketSendFlags {
+        self.send_flags
+    }
+
+    /// Set the flags used when sending data
+    #[must_use]
+    pub fn set_send_flags(&mut self, send_flags: SocketSendFlags) {
+        self.send_flags = send_flags;
+    }
+
+    /// Flags used when receiving data
+    #[must_use]
+    pub fn recv_flags(&self) -> SocketRecvFlags {
+        self.recv_flags
+    }
+
+    /// Set the flags used when receiving data
+    #[must_use]
+    pub fn set_recv_flags(&mut self, recv_flags: SocketRecvFlags) {
+        self.recv_flags = recv_flags;
     }
 }
 

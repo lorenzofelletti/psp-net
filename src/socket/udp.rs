@@ -10,7 +10,7 @@ use crate::{
         io::{EasySocket, Open, OptionType},
         SocketBuffer,
     },
-    types::SocketOptions,
+    types::{SocketOptions, SocketRecvFlags, SocketSendFlags},
 };
 
 use super::{super::netc, error::SocketError, ToSockaddr, ToSocketAddr};
@@ -46,6 +46,10 @@ pub struct UdpSocket {
     state: UdpSocketState,
     /// The buffer to store data to send
     buffer: Box<dyn SocketBuffer>,
+    /// flags for send calls
+    send_flags: SocketSendFlags,
+    /// flags for recv calls
+    recv_flags: SocketRecvFlags,
 }
 
 impl UdpSocket {
@@ -69,6 +73,8 @@ impl UdpSocket {
                 remote: None,
                 state: UdpSocketState::Unbound,
                 buffer: Box::<Vec<u8>>::default(),
+                send_flags: SocketSendFlags::empty(),
+                recv_flags: SocketRecvFlags::empty(),
             })
         }
     }
@@ -172,7 +178,12 @@ impl UdpSocket {
         }
         let mut sockaddr = self.remote.ok_or(SocketError::Other)?;
         let result = unsafe {
-            sys::sceNetInetRecv(self.fd, buf.as_mut_ptr().cast::<c_void>(), buf.len(), 0)
+            sys::sceNetInetRecv(
+                self.fd,
+                buf.as_mut_ptr().cast::<c_void>(),
+                buf.len(),
+                self.recv_flags.as_i32(),
+            )
         };
         if (result as i32) < 0 {
             Err(SocketError::Errno(unsafe { sys::sceNetInetGetErrno() }))
@@ -204,7 +215,7 @@ impl UdpSocket {
                 self.fd,
                 buf.as_mut_ptr().cast::<c_void>(),
                 buf.len(),
-                0,
+                self.recv_flags.as_i32(),
                 &mut sockaddr,
                 &mut Self::socket_len(),
             )
@@ -252,7 +263,7 @@ impl UdpSocket {
                 self.fd,
                 buf.as_ptr().cast::<c_void>(),
                 len,
-                0,
+                self.send_flags.as_i32(),
                 &sockaddr,
                 socklen,
             )
@@ -307,7 +318,7 @@ impl UdpSocket {
                 self.fd,
                 self.buffer.as_slice().as_ptr().cast::<c_void>(),
                 self.buffer.len(),
-                0,
+                self.send_flags.as_i32(),
             )
         };
         if (result as i32) < 0 {
@@ -347,6 +358,30 @@ impl UdpSocket {
     #[must_use]
     pub fn state(&self) -> UdpSocketState {
         self.state
+    }
+
+    /// Flags used when sending data
+    #[must_use]
+    pub fn send_flags(&self) -> SocketSendFlags {
+        self.send_flags
+    }
+
+    /// Set the flags used when sending data
+    #[must_use]
+    pub fn set_send_flags(&mut self, send_flags: SocketSendFlags) {
+        self.send_flags = send_flags;
+    }
+
+    /// Flags used when receiving data
+    #[must_use]
+    pub fn recv_flags(&self) -> SocketRecvFlags {
+        self.recv_flags
+    }
+
+    /// Set the flags used when receiving data
+    #[must_use]
+    pub fn set_recv_flags(&mut self, recv_flags: SocketRecvFlags) {
+        self.recv_flags = recv_flags;
     }
 }
 
