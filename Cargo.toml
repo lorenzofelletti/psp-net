@@ -6,6 +6,7 @@ license-file = "LICENSE"
 keywords = ["psp", "net", "networking", "embedded", "gamedev"]
 authors = ["Lorenzo Felletti <lorenzo97.felletti@gmail.com>"]
 description = "Networking library for the Sony PSP"
+rust-version = "1.80"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
