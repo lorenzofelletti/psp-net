@@ -208,7 +208,6 @@ impl TcpSocket {
     }
 
     /// Set the flags used when sending data
-    #[must_use]
     pub fn set_send_flags(&mut self, send_flags: SocketSendFlags) {
         self.send_flags = send_flags;
     }
@@ -220,7 +219,6 @@ impl TcpSocket {
     }
 
     /// Set the flags used when receiving data
-    #[must_use]
     pub fn set_recv_flags(&mut self, recv_flags: SocketRecvFlags) {
         self.recv_flags = recv_flags;
     }
