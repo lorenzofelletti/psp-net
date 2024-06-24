@@ -515,7 +515,7 @@ dependencies = [
 
 [[package]]
 name = "psp-net"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "bitflags 2.5.0",
  "dns-protocol",
