@@ -59,7 +59,7 @@ impl DnsResolver {
     pub fn new(dns: SocketAddr) -> Result<Self, DnsError> {
         let mut udp_socket = UdpSocket::new().map_err(|_| DnsError::FailedToCreate)?;
         udp_socket
-            .bind(Some(dns))
+            .bind(None) // binds to None, otherwise the socket errors for some reason
             .map_err(|_| DnsError::FailedToCreate)?;
 
         Ok(DnsResolver { udp_socket, dns })
@@ -72,13 +72,7 @@ impl DnsResolver {
     /// - [`DnsError::FailedToCreate`]: The DNS resolver failed to create. This may
     ///   happen if the socket could not be created or bound to the specified address
     pub fn try_default() -> Result<Self, DnsError> {
-        let dns = *GOOGLE_DNS_HOST;
-        let mut udp_socket = UdpSocket::new().map_err(|_| DnsError::FailedToCreate)?;
-        udp_socket
-            .bind(Some(dns))
-            .map_err(|_| DnsError::FailedToCreate)?;
-
-        Ok(DnsResolver { udp_socket, dns })
+        Self::new(*GOOGLE_DNS_HOST)
     }
 
     /// Resolve a hostname to an IP address
