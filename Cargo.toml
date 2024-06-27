@@ -1,12 +1,12 @@
 [package]
 name = "psp-net"
-version = "0.5.2"
+version = "0.5.3"
 edition = "2021"
 license-file = "LICENSE"
 keywords = ["psp", "net", "networking", "embedded", "gamedev"]
 authors = ["Lorenzo Felletti <lorenzo97.felletti@gmail.com>"]
 description = "Networking library for the Sony PSP"
-rust-version = "1.80"
+rust-version = "1.81"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -14,15 +14,15 @@ rust-version = "1.80"
 default = []
 
 [dependencies]
-psp = { version = "0.3.9" }
+psp = { version = "0.3.10" }
 dns-protocol = { version = "0.1.1", default-features = false }
 embedded-tls = { version = "0.17.0", default-features = false }
 embedded-io = { version = "0.6.1", default-features = false }
 rand = { version = "0.8.5", default-features = false }
 rand_chacha = { version = "0.3.1", default-features = false }
 regex = { version = "1.10", default-features = false }
-lazy_static = { version = "1.4.0", default-features = false, features = [
+lazy_static = { version = "1.5.0", default-features = false, features = [
     "spin_no_std",
 ] }
 embedded-nal = "0.8.0"
-bitflags = { version = "2.5.0", default-features = false }
+bitflags = { version = "2.6.0", default-features = false }
