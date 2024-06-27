@@ -22,5 +22,4 @@ You can set Rust nightly in your project by running `rustup override set nightly
 To set a specific nightly version, use `rustup override set nightly-<version>`.
 
 ## MSRV
-The minimum supported Rust version for this crate is (nightly) `1.78.0`.
-The maximum supported Rust version for this crate is (nightly) `1.80.0`.
+The minimum supported Rust version for this crate is (nightly) `1.81.0`.

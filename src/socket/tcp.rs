@@ -141,10 +141,10 @@ impl TcpSocket {
                 self.recv_flags.as_i32(),
             )
         };
-        if (result as i32) < 0 {
+        if result < 0 {
             Err(SocketError::Errno(unsafe { sys::sceNetInetGetErrno() }))
         } else {
-            Ok(result)
+            Ok(result as usize)
         }
     }
 
