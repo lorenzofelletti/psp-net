@@ -402,6 +402,19 @@ impl ErrorType for UdpSocket {
 
 impl<'a> Open<'a> for UdpSocket {
     /// Open the socket
+    ///
+    /// # Parameters
+    /// - `options`: The options to use when opening the socket
+    ///
+    /// # Returns
+    /// - `Ok(Self)` if the socket was opened successfully
+    /// - `Err(SocketError)` if the socket failed to open
+    ///
+    /// # Examples
+    /// ```no_run
+    /// let mut socket = UdpSocket::new()?;
+    /// socket.open(&SocketOptions::default())?;
+    /// ```
     fn open(mut self, options: &'a Self::Options<'a>) -> Result<Self, Self::Error> {
         self.bind(None)?;
         self.connect(options.remote())?;

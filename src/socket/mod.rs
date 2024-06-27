@@ -8,6 +8,7 @@ pub mod tcp;
 pub mod tls;
 pub mod udp;
 
+/// Convert a [`SocketAddrV4`] to a [`sockaddr`]
 fn socket_addr_v4_to_sockaddr(addr: SocketAddrV4) -> sockaddr {
     let octets = addr.ip().octets();
     let sin_addr = u32::from_le_bytes(octets);

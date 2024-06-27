@@ -255,6 +255,13 @@ impl<'a> Open<'a> for TcpSocket {
 impl Read for TcpSocket {
     /// Read from the socket
     ///
+    /// # Parameters
+    /// - `buf`: The buffer where the read data will be stored
+    ///
+    /// # Returns
+    /// - `Ok(usize)` if the read was successful. The number of bytes read
+    /// - `Err(SocketError)` if the read was unsuccessful.
+    ///
     /// # Errors
     /// - [`SocketError::NotConnected`] if the socket is not connected
     /// - A [`SocketError`] if the read was unsuccessful

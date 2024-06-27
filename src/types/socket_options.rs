@@ -38,11 +38,17 @@ impl SocketOptions {
 /// [`EasySocket`](super::traits::io::EasySocket).
 #[derive(Clone, Debug)]
 pub struct TlsSocketOptions<'a> {
+    /// The seed to use for the RNG
     seed: u64,
+    /// The server name to use
     server_name: String,
+    /// The certificate
     cert: Option<Certificate<'a>>,
+    /// The CA
     ca: Option<Certificate<'a>>,
+    /// Whether RSA signatures should be enabled
     enable_rsa_signatures: bool,
+    /// Whether the max fragment length should be reset
     reset_max_fragment_length: bool,
 }
 
@@ -52,6 +58,15 @@ impl<'a> TlsSocketOptions<'a> {
     /// # Arguments
     /// - `seed`: The seed to use for the RNG
     /// - `server_name`: The server name to use
+    ///
+    /// # Returns
+    /// - A new socket options object
+    ///
+    /// # Notes
+    /// By default
+    /// - RSA signatures are enabled
+    /// - The max fragment length is not reset
+    /// - The certificate and CA are not set.
     #[must_use]
     pub fn new(seed: u64, server_name: String) -> Self {
         Self {

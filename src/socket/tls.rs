@@ -63,7 +63,6 @@ impl<'a> TlsSocket<'a> {
         TlsSocket {
             tls_connection,
             tls_config,
-            // certificate: None,
         }
     }
 
@@ -119,6 +118,22 @@ where
     'a: 'b,
 {
     /// Open the TLS connection.
+    ///
+    /// # Parameters
+    /// - `options`: The TLS options
+    ///
+    /// # Returns
+    /// A new TLS socket, or an error if opening fails.
+    ///
+    /// # Example
+    /// ```no_run
+    /// let tls_socket = TlsSocket::new(tcp_socket, &mut read_buf, &mut write_buf);
+    /// tls_socket = tls_socket.open(&options)?;
+    /// ```
+    ///
+    /// # Notes
+    /// The function takes ownership of the socket, and returns a new socket that has the connection open.
+    /// Therefore, you must assign the returned socket to a variable in order to use it.
     fn open(mut self, options: &'a Self::Options<'a>) -> Result<Self, embedded_tls::TlsError> {
         let mut rng = ChaCha20Rng::seed_from_u64(options.seed());
 
@@ -133,7 +148,6 @@ where
         }
 
         if let Some(cert) = options.cert() {
-            // self.certificate = Some(Certificate::RawPublicKey(cert));
             self.tls_config = self.tls_config.with_cert(cert.clone());
         }
 
@@ -151,6 +165,13 @@ where
 
 impl embedded_io::Read for TlsSocket<'_> {
     /// Read data from the TLS connection.
+    ///
+    /// # Parameters
+    /// - `buf`: The buffer where the data will be stored.
+    ///
+    /// # Returns
+    /// - `Ok(usize)` if the read was successful. The number of bytes read
+    /// - `Err(SocketError)` if the read was unsuccessful.
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
         self.tls_connection.read(buf)
     }
@@ -158,6 +179,13 @@ impl embedded_io::Read for TlsSocket<'_> {
 
 impl embedded_io::Write for TlsSocket<'_> {
     /// Write data to the TLS connection.
+    ///
+    /// # Parameters
+    /// - `buf`: The buffer containing the data to be sent.
+    ///
+    /// # Returns
+    /// - `Ok(usize)` if the write was successful. The number of bytes written
+    /// - `Err(SocketError)` if the write was unsuccessful.
     fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
         self.tls_connection.write(buf)
     }
