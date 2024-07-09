@@ -24,7 +24,6 @@ pub struct TlsSocket<'a> {
     tls_connection: TlsConnection<'a, TcpSocket, Aes128GcmSha256>,
     /// The TLS config
     tls_config: TlsConfig<'a, Aes128GcmSha256>,
-    // certificate: Option<Certificate<'a>>,
 }
 
 impl<'a> TlsSocket<'a> {
