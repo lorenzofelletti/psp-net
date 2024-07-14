@@ -116,6 +116,7 @@ impl<'a, 'b> Open<'a> for TlsSocket<'b>
 where
     'a: 'b,
 {
+    type Return<'c> = Self;
     /// Open the TLS connection.
     ///
     /// # Parameters

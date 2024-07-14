@@ -240,6 +240,7 @@ impl OptionType for TcpSocket {
 }
 
 impl<'a> Open<'a> for TcpSocket {
+    type Return<'b> = Self;
     /// Return a TCP socket connected to the remote specified in `options`
     fn open(mut self, options: &'a Self::Options<'a>) -> Result<Self, Self::Error>
     where

@@ -8,7 +8,7 @@ use embedded_io::{Read, Write};
 use embedded_nal::{IpAddr, Ipv4Addr, SocketAddr};
 use psp::sys::in_addr;
 
-use crate::socket::udp::UdpSocketState;
+use crate::traits::io::Connected;
 
 use super::{
     socket::{udp::UdpSocket, ToSocketAddr},
@@ -31,7 +31,7 @@ pub fn create_a_type_query(domain: &str) -> Question {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DnsError {
     /// The DNS resolver failed to create
-    FailedToCreate,
+    FailedToCreate(String),
     /// The hostname could not be resolved
     HostnameResolutionFailed(String),
     /// The IP address could not be resolved
@@ -41,7 +41,7 @@ pub enum DnsError {
 /// A DNS resolver
 pub struct DnsResolver {
     /// The UDP socket that is used to send and receive DNS messages
-    udp_socket: UdpSocket,
+    udp_socket: UdpSocket<Connected>,
     /// The DNS server address
     dns: SocketAddr,
 }
@@ -57,10 +57,14 @@ impl DnsResolver {
     ///   happen if the socket could not be created or bound to the specified address
     #[allow(unused)]
     pub fn new(dns: SocketAddr) -> Result<Self, DnsError> {
-        let mut udp_socket = UdpSocket::new().map_err(|_| DnsError::FailedToCreate)?;
-        udp_socket
+        let udp_socket = UdpSocket::new()
+            .map_err(|_| DnsError::FailedToCreate("Failed to create socket".to_owned()))?;
+        let udp_socket = udp_socket
             .bind(None) // binds to None, otherwise the socket errors for some reason
-            .map_err(|_| DnsError::FailedToCreate)?;
+            .map_err(|_| DnsError::FailedToCreate("Failed to bind socket".to_owned()))?;
+        let udp_socket = udp_socket
+            .connect(dns)
+            .map_err(|_| DnsError::FailedToCreate("Failed to connect socket".to_owned()))?;
 
         Ok(DnsResolver { udp_socket, dns })
     }
@@ -89,13 +93,6 @@ impl DnsResolver {
     ///   This may happen if the connection of the socket fails, or if the DNS server
     ///   does not answer the query, or any other error occurs
     pub fn resolve(&mut self, host: &str) -> Result<in_addr, DnsError> {
-        // connect to the DNS server, if not already
-        if self.udp_socket.get_state() != UdpSocketState::Connected {
-            self.udp_socket
-                .connect(self.dns)
-                .map_err(|e| DnsError::HostnameResolutionFailed(e.to_string()))?;
-        }
-
         // create a new query
         let mut questions = [super::dns::create_a_type_query(host)];
         let query = dns_protocol::Message::new(
@@ -165,6 +162,13 @@ impl DnsResolver {
                 "Could not parse IP address".to_owned(),
             )),
         }
+    }
+
+    /// Get the [`SocketAddr`] of the DNS server
+    #[must_use]
+    #[inline]
+    pub fn dns(&self) -> SocketAddr {
+        self.dns
     }
 }
 
