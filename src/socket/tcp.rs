@@ -1,4 +1,3 @@
-use alloc::boxed::Box;
 use alloc::vec::Vec;
 use embedded_io::{ErrorType, Read, Write};
 
@@ -41,13 +40,13 @@ use super::ToSockaddr;
 /// // no need to call close, as drop will do it
 /// ```
 #[repr(C)]
-pub struct TcpSocket {
+pub struct TcpSocket<B: SocketBuffer = Vec<u8>> {
     /// The socket file descriptor
     fd: i32,
     /// Whether the socket is connected
     is_connected: bool,
     /// The buffer to store data to send
-    buffer: Box<dyn SocketBuffer>,
+    buffer: B,
     /// flags for send calls
     send_flags: SocketSendFlags,
     /// flags for recv calls
@@ -71,7 +70,7 @@ impl TcpSocket {
             Ok(TcpSocket {
                 fd,
                 is_connected: false,
-                buffer: Box::<Vec<u8>>::default(),
+                buffer: Vec::default(),
                 send_flags: SocketSendFlags::empty(),
                 recv_flags: SocketRecvFlags::empty(),
             })
@@ -224,7 +223,7 @@ impl TcpSocket {
     }
 }
 
-impl Drop for TcpSocket {
+impl<B: SocketBuffer> Drop for TcpSocket<B> {
     fn drop(&mut self) {
         unsafe {
             sys::sceNetInetClose(self.fd);

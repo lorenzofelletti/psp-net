@@ -1,10 +1,11 @@
 use alloc::vec::Vec;
+use core::fmt::Debug;
 
 pub mod dns;
 pub mod io;
 
 /// A trait for a buffer that can be used with a socket
-pub trait SocketBuffer {
+pub trait SocketBuffer: Clone + Debug + Default {
     /// Create a new buffer
     fn new() -> Self
     where
