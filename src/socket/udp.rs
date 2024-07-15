@@ -16,6 +16,7 @@ use crate::{
 use super::{
     super::netc,
     error::SocketError,
+    sce::SocketFileDescriptor,
     state::{Bound, Connected, SocketState, Unbound},
     ToSockaddr, ToSocketAddr,
 };
@@ -34,7 +35,7 @@ use super::{
 #[derive(Clone)]
 pub struct UdpSocket<S: SocketState = Unbound, B: SocketBuffer = Vec<u8>> {
     /// The socket file descriptor
-    fd: i32,
+    fd: SocketFileDescriptor,
     /// The remote host to connect to
     remote: Option<sockaddr>,
     /// The buffer to store data to send
@@ -66,6 +67,7 @@ impl UdpSocket {
         if fd < 0 {
             Err(SocketError::Errno(unsafe { sys::sceNetInetGetErrno() }))
         } else {
+            let fd = SocketFileDescriptor::new(fd);
             Ok(UdpSocket {
                 fd,
                 remote: None,
@@ -87,7 +89,7 @@ impl<S: SocketState> UdpSocket<S> {
     /// Get the file descriptor of the socket
     #[must_use]
     pub fn fd(&self) -> i32 {
-        self.fd
+        *self.fd
     }
 
     /// Get the remote address of the socket
@@ -155,7 +157,7 @@ impl UdpSocket<Unbound> {
 
                 if unsafe {
                     sys::sceNetInetBind(
-                        self.fd,
+                        *self.fd,
                         &sockaddr,
                         core::mem::size_of::<netc::sockaddr>() as u32,
                     )
@@ -205,7 +207,7 @@ impl UdpSocket<Bound> {
             SocketAddr::V4(v4) => {
                 let sockaddr = v4.to_sockaddr();
 
-                if unsafe { sys::sceNetInetConnect(self.fd, &sockaddr, Self::socket_len()) } != 0 {
+                if unsafe { sys::sceNetInetConnect(*self.fd, &sockaddr, Self::socket_len()) } != 0 {
                     let errno = unsafe { sys::sceNetInetGetErrno() };
                     Err(SocketError::Errno(errno))
                 } else {
@@ -235,7 +237,7 @@ impl UdpSocket<Bound> {
         let mut sockaddr = self.remote.ok_or(SocketError::Other)?;
         let result = unsafe {
             sys::sceNetInetRecvfrom(
-                self.fd,
+                *self.fd,
                 buf.as_mut_ptr().cast::<c_void>(),
                 buf.len(),
                 self.recv_flags.as_i32(),
@@ -280,7 +282,7 @@ impl UdpSocket<Bound> {
 
         let result = unsafe {
             sys::sceNetInetSendto(
-                self.fd,
+                *self.fd,
                 buf.as_ptr().cast::<c_void>(),
                 len,
                 self.send_flags.as_i32(),
@@ -313,7 +315,7 @@ impl UdpSocket<Connected> {
     pub fn _read(&mut self, buf: &mut [u8]) -> Result<usize, SocketError> {
         let result = unsafe {
             sys::sceNetInetRecv(
-                self.fd,
+                *self.fd,
                 buf.as_mut_ptr().cast::<c_void>(),
                 buf.len(),
                 self.recv_flags.as_i32(),
@@ -354,7 +356,7 @@ impl UdpSocket<Connected> {
     fn send(&mut self) -> Result<usize, SocketError> {
         let result = unsafe {
             sys::sceNetInetSend(
-                self.fd,
+                *self.fd,
                 self.buffer.as_slice().as_ptr().cast::<c_void>(),
                 self.buffer.len(),
                 self.send_flags.as_i32(),
@@ -365,19 +367,6 @@ impl UdpSocket<Connected> {
         } else {
             self.buffer.shift_left_buffer(result as usize);
             Ok(result as usize)
-        }
-    }
-}
-
-impl<S: SocketState, B: SocketBuffer> Drop for UdpSocket<S, B> {
-    /// Close the socket
-    fn drop(&mut self) {
-        unsafe {
-            // we do not want to close the socket if the current struct is
-            // dropped as a result of a state transition.
-            if self.close_on_drop {
-                _ = sys::sceNetInetClose(self.fd);
-            }
         }
     }
 }

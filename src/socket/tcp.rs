@@ -13,6 +13,7 @@ use crate::types::{SocketOptions, SocketRecvFlags, SocketSendFlags};
 use super::super::netc;
 
 use super::error::SocketError;
+use super::sce::SocketFileDescriptor;
 use super::state::{Connected, SocketState, Unbound};
 use super::ToSockaddr;
 
@@ -41,9 +42,10 @@ use super::ToSockaddr;
 /// // no need to call close, as drop will do it
 /// ```
 #[repr(C)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TcpSocket<S: SocketState = Unbound, B: SocketBuffer = Vec<u8>> {
     /// The socket file descriptor
-    pub(super) fd: i32,
+    pub(super) fd: SocketFileDescriptor,
     /// The buffer to store data to send
     buffer: B,
     /// flags for send calls
@@ -70,6 +72,7 @@ impl TcpSocket {
         if fd < 0 {
             Err(SocketError::Errno(unsafe { sys::sceNetInetGetErrno() }))
         } else {
+            let fd = SocketFileDescriptor::new(fd);
             Ok(TcpSocket {
                 fd,
                 buffer: Vec::with_capacity(0),
@@ -86,7 +89,7 @@ impl<'a, S: SocketState> TcpSocket<S> {
     /// Return the underlying socket's file descriptor
     #[must_use]
     pub fn fd(&self) -> i32 {
-        self.fd
+        *self.fd
     }
 
     /// Flags used when sending data
@@ -146,7 +149,7 @@ impl TcpSocket<Unbound> {
 
                 if unsafe {
                     sys::sceNetInetConnect(
-                        self.fd,
+                        *self.fd,
                         &sockaddr,
                         core::mem::size_of::<netc::sockaddr_in>() as u32,
                     )
@@ -180,7 +183,7 @@ impl TcpSocket<Connected> {
     pub fn _read(&self, buf: &mut [u8]) -> Result<usize, SocketError> {
         let result = unsafe {
             sys::sceNetInetRecv(
-                self.fd,
+                *self.fd,
                 buf.as_mut_ptr().cast::<c_void>(),
                 buf.len(),
                 self.recv_flags.as_i32(),
@@ -212,7 +215,7 @@ impl TcpSocket<Connected> {
     fn send(&mut self) -> Result<usize, SocketError> {
         let result = unsafe {
             sys::sceNetInetSend(
-                self.fd,
+                *self.fd,
                 self.buffer.as_slice().as_ptr().cast::<c_void>(),
                 self.buffer.len(),
                 self.send_flags.as_i32(),
@@ -223,16 +226,6 @@ impl TcpSocket<Connected> {
         } else {
             self.buffer.shift_left_buffer(result as usize);
             Ok(result as usize)
-        }
-    }
-}
-
-impl<S: SocketState, B: SocketBuffer> Drop for TcpSocket<S, B> {
-    fn drop(&mut self) {
-        if self.close_on_drop {
-            unsafe {
-                sys::sceNetInetClose(self.fd);
-            }
         }
     }
 }
