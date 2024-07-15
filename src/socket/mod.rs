@@ -4,6 +4,7 @@ use psp::sys::{in_addr, sockaddr};
 use super::netc;
 
 pub mod error;
+pub mod state;
 pub mod tcp;
 pub mod tls;
 pub mod udp;

@@ -1,5 +1,3 @@
-use core::fmt::Debug;
-
 pub trait OptionType {
     type Options<'b>: ?Sized;
 }
@@ -44,21 +42,3 @@ pub trait EasySocket: Write + Read {}
 pub trait Write = embedded_io::Write;
 pub trait Read = embedded_io::Read;
 pub trait ErrorType = embedded_io::ErrorType;
-
-/// Trait describing the state of a socket
-pub trait SocketState: Debug {}
-
-/// Socket is in an unbound state
-#[derive(Debug)]
-pub struct Unbound;
-impl SocketState for Unbound {}
-
-/// Socket is in a bound state
-#[derive(Debug)]
-pub struct Bound;
-impl SocketState for Bound {}
-
-/// Socket is in a connected state
-#[derive(Debug)]
-pub struct Connected;
-impl SocketState for Connected {}

@@ -7,13 +7,18 @@ use core::ffi::c_void;
 
 use crate::{
     traits::{
-        io::{Bound, Connected, EasySocket, Open, OptionType, SocketState, Unbound},
+        io::{EasySocket, Open, OptionType},
         SocketBuffer,
     },
     types::{SocketOptions, SocketRecvFlags, SocketSendFlags},
 };
 
-use super::{super::netc, error::SocketError, ToSockaddr, ToSocketAddr};
+use super::{
+    super::netc,
+    error::SocketError,
+    state::{Bound, Connected, SocketState, Unbound},
+    ToSockaddr, ToSocketAddr,
+};
 
 /// A UDP socket
 ///
@@ -64,7 +69,7 @@ impl UdpSocket {
             Ok(UdpSocket {
                 fd,
                 remote: None,
-                buffer: Vec::default(),
+                buffer: Vec::with_capacity(0),
                 send_flags: SocketSendFlags::empty(),
                 recv_flags: SocketRecvFlags::empty(),
                 _marker: core::marker::PhantomData,
@@ -121,7 +126,7 @@ impl UdpSocket<Unbound> {
         UdpSocket {
             fd: self.fd,
             remote: remote,
-            buffer: Vec::default(),
+            buffer: Vec::with_capacity(0),
             send_flags: self.send_flags,
             recv_flags: self.recv_flags,
             _marker: core::marker::PhantomData,
@@ -135,11 +140,10 @@ impl UdpSocket<Unbound> {
     /// - `addr`: The address to bind to, if `None` binds to `0.0.0.0:0`
     ///
     /// # Returns
-    /// - `Ok(())` if the binding was successful
-    /// - `Err(String)` if the binding was unsuccessful.
+    /// - `Ok(UdpSocket<Bound>)` if the binding was successful
+    /// - `Err(SocketError)` if the binding was unsuccessful.
     ///
     /// # Errors
-    /// - [`SocketError::AlreadyBound`] if the socket is already bound
     /// - [`SocketError::Errno`] if the binding was unsuccessful
     #[allow(unused)]
     pub fn bind(mut self, addr: Option<SocketAddr>) -> Result<UdpSocket<Bound>, SocketError> {
@@ -190,13 +194,11 @@ impl UdpSocket<Bound> {
     /// To bind the socket use [`bind()`](UdpSocket::bind).
     ///
     /// # Returns
-    /// - `Ok(())` if the connection was successful
+    /// - `Ok(UdpSocket<Connected>)` if the connection was successful
     /// - `Err(SocketError)` if the connection was unsuccessful
     ///
     /// # Errors
-    /// - [`SocketError::NotBound`] if the socket is not bound
-    /// - [`SocketError::AlreadyConnected`] if the socket is already connected
-    /// - Any other [`SocketError`] if the connection was unsuccessful
+    /// - Any [`SocketError`] if the connection was unsuccessful
     #[allow(unused)]
     pub fn connect(mut self, addr: SocketAddr) -> Result<UdpSocket<Connected>, SocketError> {
         match addr {
@@ -214,16 +216,17 @@ impl UdpSocket<Bound> {
         }
     }
 
-    /// Write to a socket in state [`UdpSocketState::Bound`]
+    /// Read from a bound socket
+    ///
+    /// # Parameters
+    /// - `buf`: The buffer where to store the received data
     ///
     /// # Returns
-    /// - `Ok(usize)` if the write was successful. The number of bytes read
+    /// - `Ok((usize, UdpSocket<Connected>))` if the write was successful. The number of bytes read
     /// - `Err(SocketError)` if the read was unsuccessful.
     ///
-    /// # Errors
-    /// - [`SocketError::NotBound`] if the socket is not bound
-    /// - [`SocketError::AlreadyConnected`] if the socket is already connected
-    /// - Any other [`SocketError`] if the read was unsuccessful
+    /// # Errorslready connected
+    /// - Any [`SocketError`] if the read was unsuccessful
     #[allow(unused)]
     pub fn _read_from(
         mut self,
@@ -247,16 +250,18 @@ impl UdpSocket<Bound> {
         }
     }
 
-    /// Write to a socket in state [`UdpSocketState::Bound`]
+    /// Write to a bound socket
+    ///
+    /// # Parameters
+    /// - `buf`: The buffer containing the data to send
     ///
     ///
     /// # Returns
-    /// - `Ok(usize)` if the send was successful. The number of bytes sent
+    /// - `Ok((usize, UdpSocket<Connected>))` if the send was successful. The number of bytes sent
     /// - `Err(SocketError)` if the send was unsuccessful.
     ///
     /// # Errors
-    /// If the socket is not in state [`UdpSocketState::Connected`] this will return an error.
-    /// It may also error if the socket fails to send the data.
+    /// - Any [`SocketError`] if the send was unsuccessful
     #[allow(unused)]
     pub fn _write_to(
         self,
@@ -293,15 +298,17 @@ impl UdpSocket<Bound> {
 }
 
 impl UdpSocket<Connected> {
-    /// Read from a socket in state [`UdpSocketState::Connected`]
+    /// Read from a socket
+    ///
+    /// # Parameters
+    /// - `buf`: The buffer where to store the received data
     ///
     /// # Returns
     /// - `Ok(usize)` if the read was successful. The number of bytes read
     /// - `Err(SocketError)` if the read was unsuccessful.
     ///
     /// # Errors
-    /// - [`SocketError::NotConnected`] if the socket is not connected
-    /// - Any other [`SocketError`] if the read was unsuccessful
+    /// - Any [`SocketError`] if the read was unsuccessful
     #[allow(unused)]
     pub fn _read(&mut self, buf: &mut [u8]) -> Result<usize, SocketError> {
         let result = unsafe {
@@ -319,15 +326,14 @@ impl UdpSocket<Connected> {
         }
     }
 
-    /// Write to a socket in state [`UdpSocketState::Connected`]
+    /// Write to a socket
     ///
     /// # Returns
     /// - `Ok(usize)` if the send was successful. The number of bytes sent
     /// - `Err(SocketError)` if the send was unsuccessful.
     ///
     /// # Errors
-    /// If the socket is not in state [`UdpSocketState::Connected`] this will return an error.
-    /// It may also error if the socket fails to send the data.
+    /// - Any [`SocketError`] if the send was unsuccessful
     #[allow(unused)]
     pub fn _write(&mut self, buf: &[u8]) -> Result<usize, SocketError> {
         self.buffer.append_buffer(buf);
@@ -337,8 +343,7 @@ impl UdpSocket<Connected> {
     /// Flush the send buffer
     ///
     /// # Errors
-    /// - [`SocketError::NotConnected`] if the socket is not connected
-    /// - Any other [`SocketError`] if the flush was unsuccessful
+    /// - Any [`SocketError`] if the flush was unsuccessful.
     pub fn _flush(&mut self) -> Result<(), SocketError> {
         while !self.buffer.is_empty() {
             self.send()?;
@@ -390,16 +395,16 @@ impl<'a> Open<'a> for UdpSocket<Unbound> {
     /// Open the socket
     ///
     /// # Parameters
-    /// - `options`: The options to use when opening the socket
+    /// - `options`: The options to use when opening the socket.
     ///
     /// # Returns
-    /// - `Ok(Self)` if the socket was opened successfully
-    /// - `Err(SocketError)` if the socket failed to open
+    /// - `Ok(UdpSocket<Connected>)` if the socket was opened successfully
+    /// - `Err(SocketError)` if the socket failed to open.
     ///
     /// # Examples
     /// ```no_run
-    /// let mut socket = UdpSocket::new()?;
-    /// socket.open(&SocketOptions::default())?;
+    /// let socket = UdpSocket::new()?;
+    /// let socket = socket.open(&SocketOptions::default())?;
     /// ```
     fn open(self, options: &'a Self::Options<'a>) -> Result<Self::Return<'a>, Self::Error> {
         let sock = self.bind(None)?;
@@ -411,10 +416,12 @@ impl<'a> Open<'a> for UdpSocket<Unbound> {
 impl Read for UdpSocket<Connected> {
     /// Read from the socket
     ///
-    /// # Notes
-    /// If the socket is in state [`UdpSocketState::Unbound`] this will return an error,
-    /// otherwise it will attempt to read from the socket. You can check the state of the socket
-    /// using [`get_state`](Self::get_state).
+    /// # Parameters
+    /// - `buf`: The buffer where the read data will be stored
+    ///
+    /// # Returns
+    /// - `Ok(usize)` if the read was successful. The number of bytes read
+    /// - `Err(SocketError)` if the read was unsuccessful.
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
         self._read(buf)
     }
@@ -423,14 +430,20 @@ impl Read for UdpSocket<Connected> {
 impl Write for UdpSocket<Connected> {
     /// Write to the socket
     ///
-    /// # Notes
-    /// If the socket is not in state [`UdpSocketState::Connected`] this will return an error.
-    /// To connect to a remote host use [`connect`](UdpSocket::connect) first.
+    /// # Parameters
+    /// - `buf`: The data to write
+    ///
+    /// # Returns
+    /// - `Ok(usize)` if the write was successful. The number of bytes written
+    /// - `Err(SocketError)` if the write was unsuccessful.
     fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
         self._write(buf)
     }
 
     /// Flush the socket
+    ///
+    /// # Errors
+    /// - Any [`SocketError`] if the flush was unsuccessful.
     fn flush(&mut self) -> Result<(), Self::Error> {
         self._flush()
     }

@@ -13,6 +13,7 @@ use crate::types::{SocketOptions, SocketRecvFlags, SocketSendFlags};
 use super::super::netc;
 
 use super::error::SocketError;
+use super::state::{Connected, SocketState, Unbound};
 use super::ToSockaddr;
 
 /// A TCP socket
@@ -32,25 +33,27 @@ use super::ToSockaddr;
 /// ```no_run
 /// use psp::net::TcpSocket;
 ///
-/// let mut socket = TcpSocket::new().unwrap();
+/// let socket = TcpSocket::new().unwrap();
 /// let socket_options = SocketOptions{ remote: addr };
-/// socket.open(socket_options).unwrap();
+/// let socket = socket.open(socket_options).unwrap();
 /// socket.write(b"hello world").unwrap();
 /// socket.flush().unwrap();
 /// // no need to call close, as drop will do it
 /// ```
 #[repr(C)]
-pub struct TcpSocket<B: SocketBuffer = Vec<u8>> {
+pub struct TcpSocket<S: SocketState = Unbound, B: SocketBuffer = Vec<u8>> {
     /// The socket file descriptor
-    fd: i32,
-    /// Whether the socket is connected
-    is_connected: bool,
+    pub(super) fd: i32,
     /// The buffer to store data to send
     buffer: B,
     /// flags for send calls
     send_flags: SocketSendFlags,
     /// flags for recv calls
     recv_flags: SocketRecvFlags,
+    /// marker for the socket state
+    _marker: core::marker::PhantomData<S>,
+    /// Whether to close the socket on drop
+    pub(super) close_on_drop: bool,
 }
 
 impl TcpSocket {
@@ -62,18 +65,64 @@ impl TcpSocket {
     /// # Errors
     /// - [`SocketError::Errno`] if the socket could not be created
     #[allow(dead_code)]
-    pub fn new() -> Result<TcpSocket, SocketError> {
+    pub fn new() -> Result<TcpSocket<Unbound>, SocketError> {
         let fd = unsafe { sys::sceNetInetSocket(i32::from(netc::AF_INET), netc::SOCK_STREAM, 0) };
         if fd < 0 {
             Err(SocketError::Errno(unsafe { sys::sceNetInetGetErrno() }))
         } else {
             Ok(TcpSocket {
                 fd,
-                is_connected: false,
-                buffer: Vec::default(),
+                buffer: Vec::with_capacity(0),
                 send_flags: SocketSendFlags::empty(),
                 recv_flags: SocketRecvFlags::empty(),
+                _marker: core::marker::PhantomData,
+                close_on_drop: true,
             })
+        }
+    }
+}
+
+impl<'a, S: SocketState> TcpSocket<S> {
+    /// Return the underlying socket's file descriptor
+    #[must_use]
+    pub fn fd(&self) -> i32 {
+        self.fd
+    }
+
+    /// Flags used when sending data
+    #[must_use]
+    pub fn send_flags(&self) -> SocketSendFlags {
+        self.send_flags
+    }
+
+    /// Set the flags used when sending data
+    pub fn set_send_flags(&mut self, send_flags: SocketSendFlags) {
+        self.send_flags = send_flags;
+    }
+
+    /// Flags used when receiving data
+    #[must_use]
+    pub fn recv_flags(&self) -> SocketRecvFlags {
+        self.recv_flags
+    }
+
+    /// Set the flags used when receiving data
+    pub fn set_recv_flags(&mut self, recv_flags: SocketRecvFlags) {
+        self.recv_flags = recv_flags;
+    }
+}
+
+impl TcpSocket<Unbound> {
+    #[must_use]
+    fn transition(mut self) -> TcpSocket<Connected> {
+        self.close_on_drop = false;
+        TcpSocket {
+            fd: self.fd,
+            buffer: Vec::default(),
+            send_flags: self.send_flags,
+            recv_flags: self.recv_flags,
+            _marker: core::marker::PhantomData,
+            close_on_drop: true,
         }
     }
 
@@ -89,12 +138,8 @@ impl TcpSocket {
     /// # Errors
     /// - [`SocketError::UnsupportedAddressFamily`] if the address family is not supported (only IPv4 is supported)
     /// - Any other [`SocketError`] if the connection was unsuccessful
-    #[allow(dead_code)]
-    #[allow(dead_code)]
-    pub fn connect(&mut self, remote: SocketAddr) -> Result<(), SocketError> {
-        if self.is_connected {
-            return Err(SocketError::AlreadyConnected);
-        }
+    #[must_use]
+    pub fn connect(self, remote: SocketAddr) -> Result<TcpSocket<Connected>, SocketError> {
         match remote {
             SocketAddr::V4(v4) => {
                 let sockaddr = v4.to_sockaddr();
@@ -110,14 +155,15 @@ impl TcpSocket {
                     let errno = unsafe { sys::sceNetInetGetErrno() };
                     Err(SocketError::Errno(errno))
                 } else {
-                    self.is_connected = true;
-                    Ok(())
+                    Ok(self.transition())
                 }
             }
             SocketAddr::V6(_) => Err(SocketError::UnsupportedAddressFamily),
         }
     }
+}
 
+impl TcpSocket<Connected> {
     /// Read from the socket
     ///
     /// # Returns
@@ -152,19 +198,11 @@ impl TcpSocket {
     /// # Errors
     /// - A [`SocketError`] if the write was unsuccessful
     pub fn _write(&mut self, buf: &[u8]) -> Result<usize, SocketError> {
-        if !self.is_connected {
-            return Err(SocketError::NotConnected);
-        }
-
         self.buffer.append_buffer(buf);
         self.send()
     }
 
     fn _flush(&mut self) -> Result<(), SocketError> {
-        if !self.is_connected {
-            return Err(SocketError::NotConnected);
-        }
-
         while !self.buffer.is_empty() {
             self.send()?;
         }
@@ -187,72 +225,39 @@ impl TcpSocket {
             Ok(result as usize)
         }
     }
-
-    /// Return the underlying socket's file descriptor
-    #[must_use]
-    pub fn fd(&self) -> i32 {
-        self.fd
-    }
-
-    /// Return whether the socket is connected
-    #[must_use]
-    pub fn is_connected(&self) -> bool {
-        self.is_connected
-    }
-
-    /// Flags used when sending data
-    #[must_use]
-    pub fn send_flags(&self) -> SocketSendFlags {
-        self.send_flags
-    }
-
-    /// Set the flags used when sending data
-    pub fn set_send_flags(&mut self, send_flags: SocketSendFlags) {
-        self.send_flags = send_flags;
-    }
-
-    /// Flags used when receiving data
-    #[must_use]
-    pub fn recv_flags(&self) -> SocketRecvFlags {
-        self.recv_flags
-    }
-
-    /// Set the flags used when receiving data
-    pub fn set_recv_flags(&mut self, recv_flags: SocketRecvFlags) {
-        self.recv_flags = recv_flags;
-    }
 }
 
-impl<B: SocketBuffer> Drop for TcpSocket<B> {
+impl<S: SocketState, B: SocketBuffer> Drop for TcpSocket<S, B> {
     fn drop(&mut self) {
-        unsafe {
-            sys::sceNetInetClose(self.fd);
+        if self.close_on_drop {
+            unsafe {
+                sys::sceNetInetClose(self.fd);
+            }
         }
     }
 }
 
-impl ErrorType for TcpSocket {
+impl<S: SocketState> ErrorType for TcpSocket<S> {
     type Error = SocketError;
 }
 
-impl OptionType for TcpSocket {
+impl<S: SocketState> OptionType for TcpSocket<S> {
     type Options<'a> = SocketOptions;
 }
 
-impl<'a> Open<'a> for TcpSocket {
-    type Return<'b> = Self;
+impl<'a> Open<'a> for TcpSocket<Unbound> {
+    type Return<'b> = TcpSocket<Connected>;
     /// Return a TCP socket connected to the remote specified in `options`
-    fn open(mut self, options: &'a Self::Options<'a>) -> Result<Self, Self::Error>
+    fn open(self, options: &'a Self::Options<'a>) -> Result<Self::Return<'a>, Self::Error>
     where
         Self: Sized,
     {
-        self.connect(options.remote())?;
-
-        Ok(self)
+        let socket = self.connect(options.remote())?;
+        Ok(socket)
     }
 }
 
-impl Read for TcpSocket {
+impl Read for TcpSocket<Connected> {
     /// Read from the socket
     ///
     /// # Parameters
@@ -266,23 +271,17 @@ impl Read for TcpSocket {
     /// - [`SocketError::NotConnected`] if the socket is not connected
     /// - A [`SocketError`] if the read was unsuccessful
     fn read<'m>(&'m mut self, buf: &'m mut [u8]) -> Result<usize, Self::Error> {
-        if !self.is_connected {
-            return Err(SocketError::NotConnected);
-        }
         self._read(buf)
     }
 }
 
-impl Write for TcpSocket {
+impl Write for TcpSocket<Connected> {
     /// Write to the socket
     ///
     /// # Errors
     /// - [`SocketError::NotConnected`] if the socket is not connected
     /// - A [`SocketError`] if the write was unsuccessful
     fn write<'m>(&'m mut self, buf: &'m [u8]) -> Result<usize, Self::Error> {
-        if !self.is_connected {
-            return Err(SocketError::NotConnected);
-        }
         self._write(buf)
     }
 
@@ -295,4 +294,4 @@ impl Write for TcpSocket {
     }
 }
 
-impl EasySocket for TcpSocket {}
+impl EasySocket for TcpSocket<Connected> {}

@@ -8,7 +8,7 @@ use embedded_io::{Read, Write};
 use embedded_nal::{IpAddr, Ipv4Addr, SocketAddr};
 use psp::sys::in_addr;
 
-use crate::traits::io::Connected;
+use crate::socket::state::Connected;
 
 use super::{
     socket::{udp::UdpSocket, ToSocketAddr},
