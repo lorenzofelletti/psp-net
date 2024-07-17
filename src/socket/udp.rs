@@ -1,3 +1,5 @@
+#![allow(clippy::module_name_repetitions)]
+
 use alloc::vec::Vec;
 use embedded_io::{ErrorType, Read, Write};
 use embedded_nal::{IpAddr, Ipv4Addr, SocketAddr};
@@ -46,9 +48,6 @@ pub struct UdpSocket<S: SocketState = Unbound, B: SocketBuffer = Vec<u8>> {
     recv_flags: SocketRecvFlags,
     /// marker for the socket state
     _marker: core::marker::PhantomData<S>,
-    /// when the drop is a result of a state transition, we do not want to close the socket,
-    /// as the socket is still in use.
-    close_on_drop: bool,
 }
 
 impl UdpSocket {
@@ -75,7 +74,6 @@ impl UdpSocket {
                 send_flags: SocketSendFlags::empty(),
                 recv_flags: SocketRecvFlags::empty(),
                 _marker: core::marker::PhantomData,
-                close_on_drop: true,
             })
         }
     }
@@ -123,16 +121,14 @@ impl<S: SocketState> UdpSocket<S> {
 
 impl UdpSocket<Unbound> {
     /// Transition the socket to `Bound` state
-    fn transition(mut self, remote: Option<sockaddr>) -> UdpSocket<Bound> {
-        self.close_on_drop = false;
+    fn transition(self, remote: Option<sockaddr>) -> UdpSocket<Bound> {
         UdpSocket {
             fd: self.fd,
-            remote: remote,
+            remote,
             buffer: Vec::with_capacity(0),
             send_flags: self.send_flags,
             recv_flags: self.recv_flags,
             _marker: core::marker::PhantomData,
-            close_on_drop: true,
         }
     }
 
@@ -176,8 +172,7 @@ impl UdpSocket<Unbound> {
 
 impl UdpSocket<Bound> {
     /// Transition the socket to `Connected` state
-    fn transition(mut self, remote: sockaddr, buf: Option<Vec<u8>>) -> UdpSocket<Connected> {
-        self.close_on_drop = false;
+    fn transition(self, remote: sockaddr, buf: Option<Vec<u8>>) -> UdpSocket<Connected> {
         UdpSocket {
             fd: self.fd,
             remote: Some(remote),
@@ -185,7 +180,6 @@ impl UdpSocket<Bound> {
             send_flags: self.send_flags,
             recv_flags: self.recv_flags,
             _marker: core::marker::PhantomData,
-            close_on_drop: true,
         }
     }
 
@@ -227,7 +221,7 @@ impl UdpSocket<Bound> {
     /// - `Ok((usize, UdpSocket<Connected>))` if the write was successful. The number of bytes read
     /// - `Err(SocketError)` if the read was unsuccessful.
     ///
-    /// # Errorslready connected
+    /// # Errors
     /// - Any [`SocketError`] if the read was unsuccessful
     #[allow(unused)]
     pub fn _read_from(

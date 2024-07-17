@@ -1,3 +1,5 @@
+#![allow(clippy::module_name_repetitions)]
+
 use alloc::string::String;
 use embedded_io::{ErrorType, Read, Write};
 use embedded_tls::{blocking::TlsConnection, Aes128GcmSha256, NoVerify, TlsConfig, TlsContext};
