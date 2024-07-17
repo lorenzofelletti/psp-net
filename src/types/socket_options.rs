@@ -1,3 +1,5 @@
+#![allow(clippy::module_name_repetitions)]
+
 use alloc::string::String;
 
 use crate::socket::SocketAddr;

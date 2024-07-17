@@ -1,3 +1,5 @@
+#![allow(clippy::module_name_repetitions)]
+
 use embedded_nal::{Ipv4Addr, SocketAddrV4};
 use psp::sys::{in_addr, sockaddr};
 
