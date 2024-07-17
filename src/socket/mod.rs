@@ -1,9 +1,13 @@
+#![allow(clippy::module_name_repetitions)]
+
 use embedded_nal::{Ipv4Addr, SocketAddrV4};
 use psp::sys::{in_addr, sockaddr};
 
 use super::netc;
 
 pub mod error;
+pub mod sce;
+pub mod state;
 pub mod tcp;
 pub mod tls;
 pub mod udp;

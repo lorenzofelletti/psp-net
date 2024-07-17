@@ -2,7 +2,7 @@ use bitflags::bitflags;
 
 bitflags! {
     /// Socket flags to use in send calls
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Default, Hash)]
     pub struct SocketSendFlags: u32 {
         /// No flags passed. Equivalent to `0x0`.
         const NONE = 0x0;
@@ -23,7 +23,7 @@ impl SocketSendFlags {
 
 bitflags! {
     /// Socket flags to use in recv calls
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Default, Hash)]
     pub struct SocketRecvFlags: u32 {
         /// No flags passed. Equivalent to `0x0`.
         const NONE = 0x0;

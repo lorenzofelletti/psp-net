@@ -1,3 +1,5 @@
+#![allow(clippy::module_name_repetitions)]
+
 use core::fmt::Debug;
 
 use alloc::string::String;

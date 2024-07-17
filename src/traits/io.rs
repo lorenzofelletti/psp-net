@@ -4,6 +4,8 @@ pub trait OptionType {
 
 /// Type implementing this trait support a Open semantics.
 pub trait Open<'a>: ErrorType + OptionType {
+    type Return<'b>;
+
     /// Open a resource, using options for configuration.
     ///
     /// # Arguments
@@ -15,7 +17,7 @@ pub trait Open<'a>: ErrorType + OptionType {
     /// # Notes
     /// See [`TlsSocketOptions`](crate::types::TlsSocketOptions) for more information
     /// on the options you can pass.
-    fn open(self, options: &'a Self::Options<'a>) -> Result<Self, Self::Error>
+    fn open(self, options: &'a Self::Options<'a>) -> Result<Self::Return<'a>, Self::Error>
     where
         Self: Sized;
 }
@@ -34,7 +36,7 @@ pub trait Open<'a>: ErrorType + OptionType {
 /// # Notes
 /// [`EasySocket`] types should implement in their [`drop`] method the steps required
 /// to close the acquired resources.
-pub trait EasySocket: for<'a> Open<'a> + Write + Read {}
+pub trait EasySocket: Write + Read {}
 
 // re-exports
 pub trait Write = embedded_io::Write;
