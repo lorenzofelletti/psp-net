@@ -1,3 +1,5 @@
+#![allow(clippy::module_name_repetitions)]
+
 use alloc::string::String;
 use embedded_io::{ErrorType, Read, Write};
 use embedded_tls::{blocking::TlsConnection, Aes128GcmSha256, NoVerify, TlsConfig, TlsContext};
@@ -11,7 +13,7 @@ use crate::{
     types::TlsSocketOptions,
 };
 
-use super::tcp::TcpSocket;
+use super::{state::Connected, tcp::TcpSocket};
 
 lazy_static::lazy_static! {
     static ref REGEX: Regex = Regex::new("\r|\0").unwrap();
@@ -21,7 +23,7 @@ lazy_static::lazy_static! {
 /// This is a wrapper around a [`TcpSocket`] that provides a TLS connection.
 pub struct TlsSocket<'a> {
     /// The TLS connection
-    tls_connection: TlsConnection<'a, TcpSocket, Aes128GcmSha256>,
+    tls_connection: TlsConnection<'a, TcpSocket<Connected>, Aes128GcmSha256>,
     /// The TLS config
     tls_config: TlsConfig<'a, Aes128GcmSha256>,
 }
@@ -51,13 +53,13 @@ impl<'a> TlsSocket<'a> {
     /// # Notes
     /// In most cases you can pass `None` for the `cert` parameter.
     pub fn new(
-        socket: TcpSocket,
+        socket: TcpSocket<Connected>,
         record_read_buf: &'a mut [u8],
         record_write_buf: &'a mut [u8],
     ) -> Self {
         let tls_config: TlsConfig<'_, Aes128GcmSha256> = TlsConfig::new();
 
-        let tls_connection: TlsConnection<TcpSocket, Aes128GcmSha256> =
+        let tls_connection: TlsConnection<TcpSocket<Connected>, Aes128GcmSha256> =
             TlsConnection::new(socket, record_read_buf, record_write_buf);
         TlsSocket {
             tls_connection,
@@ -116,6 +118,7 @@ impl<'a, 'b> Open<'a> for TlsSocket<'b>
 where
     'a: 'b,
 {
+    type Return<'c> = Self;
     /// Open the TLS connection.
     ///
     /// # Parameters
