@@ -1,3 +1,5 @@
+#![allow(clippy::module_name_repetitions)]
+
 use alloc::vec::Vec;
 use embedded_io::{ErrorType, Read, Write};
 
@@ -54,8 +56,6 @@ pub struct TcpSocket<S: SocketState = Unbound, B: SocketBuffer = Vec<u8>> {
     recv_flags: SocketRecvFlags,
     /// marker for the socket state
     _marker: core::marker::PhantomData<S>,
-    /// Whether to close the socket on drop
-    pub(super) close_on_drop: bool,
 }
 
 impl TcpSocket {
@@ -79,13 +79,12 @@ impl TcpSocket {
                 send_flags: SocketSendFlags::empty(),
                 recv_flags: SocketRecvFlags::empty(),
                 _marker: core::marker::PhantomData,
-                close_on_drop: true,
             })
         }
     }
 }
 
-impl<'a, S: SocketState> TcpSocket<S> {
+impl<S: SocketState> TcpSocket<S> {
     /// Return the underlying socket's file descriptor
     #[must_use]
     pub fn fd(&self) -> i32 {
@@ -117,15 +116,13 @@ impl<'a, S: SocketState> TcpSocket<S> {
 
 impl TcpSocket<Unbound> {
     #[must_use]
-    fn transition(mut self) -> TcpSocket<Connected> {
-        self.close_on_drop = false;
+    fn transition(self) -> TcpSocket<Connected> {
         TcpSocket {
             fd: self.fd,
             buffer: Vec::default(),
             send_flags: self.send_flags,
             recv_flags: self.recv_flags,
             _marker: core::marker::PhantomData,
-            close_on_drop: true,
         }
     }
 
@@ -141,7 +138,6 @@ impl TcpSocket<Unbound> {
     /// # Errors
     /// - [`SocketError::UnsupportedAddressFamily`] if the address family is not supported (only IPv4 is supported)
     /// - Any other [`SocketError`] if the connection was unsuccessful
-    #[must_use]
     pub fn connect(self, remote: SocketAddr) -> Result<TcpSocket<Connected>, SocketError> {
         match remote {
             SocketAddr::V4(v4) => {
