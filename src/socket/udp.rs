@@ -373,8 +373,8 @@ impl<S: SocketState> ErrorType for UdpSocket<S> {
     type Error = SocketError;
 }
 
-impl<'a> Open<'a> for UdpSocket<Unbound> {
-    type Return<'b> = UdpSocket<Connected>;
+impl<'a> Open<'a, '_> for UdpSocket<Unbound> {
+    type Return = UdpSocket<Connected>;
     /// Open the socket
     ///
     /// # Parameters
@@ -389,7 +389,7 @@ impl<'a> Open<'a> for UdpSocket<Unbound> {
     /// let socket = UdpSocket::new()?;
     /// let socket = socket.open(&SocketOptions::default())?;
     /// ```
-    fn open(self, options: &'a Self::Options<'a>) -> Result<Self::Return<'a>, Self::Error> {
+    fn open(self, options: &'_ Self::Options<'_>) -> Result<Self::Return, Self::Error> {
         let sock = self.bind(None)?;
         let sock = sock.connect(options.remote())?;
         Ok(sock)

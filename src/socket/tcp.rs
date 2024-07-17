@@ -234,10 +234,10 @@ impl<S: SocketState> OptionType for TcpSocket<S> {
     type Options<'a> = SocketOptions;
 }
 
-impl<'a> Open<'a> for TcpSocket<Unbound> {
-    type Return<'b> = TcpSocket<Connected>;
+impl<'a> Open<'a, '_> for TcpSocket<Unbound> {
+    type Return = TcpSocket<Connected>;
     /// Return a TCP socket connected to the remote specified in `options`
-    fn open(self, options: &'a Self::Options<'a>) -> Result<Self::Return<'a>, Self::Error>
+    fn open(self, options: &'_ Self::Options<'_>) -> Result<Self::Return, Self::Error>
     where
         Self: Sized,
     {
