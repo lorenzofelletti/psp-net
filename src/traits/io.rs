@@ -3,8 +3,8 @@ pub trait OptionType {
 }
 
 /// Type implementing this trait support a Open semantics.
-pub trait Open<'a>: ErrorType + OptionType {
-    type Return<'b>;
+pub trait Open<'a, 'b>: ErrorType + OptionType {
+    type Return;
 
     /// Open a resource, using options for configuration.
     ///
@@ -17,9 +17,10 @@ pub trait Open<'a>: ErrorType + OptionType {
     /// # Notes
     /// See [`TlsSocketOptions`](crate::types::TlsSocketOptions) for more information
     /// on the options you can pass.
-    fn open(self, options: &'a Self::Options<'a>) -> Result<Self::Return<'a>, Self::Error>
+    fn open(self, options: &'b Self::Options<'b>) -> Result<Self::Return, Self::Error>
     where
-        Self: Sized;
+        Self: Sized,
+        'b: 'a;
 }
 
 /// Types implementing this trait support a simplified socket use.

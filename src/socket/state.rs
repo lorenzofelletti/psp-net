@@ -18,10 +18,12 @@ impl SocketState for Bound {}
 pub struct Connected;
 impl SocketState for Connected {}
 
+/// Socket is not ready to send or receive data
 #[derive(Debug)]
 pub struct NotReady;
 impl SocketState for NotReady {}
 
+/// Socket is ready to send or receive data
 #[derive(Debug)]
 pub struct Ready;
 impl SocketState for Ready {}

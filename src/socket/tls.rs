@@ -9,11 +9,14 @@ use rand_chacha::ChaCha20Rng;
 use regex::Regex;
 
 use crate::{
-    traits::io::{Open, OptionType},
+    traits::io::{EasySocket, Open, OptionType},
     types::TlsSocketOptions,
 };
 
-use super::{state::Connected, tcp::TcpSocket};
+use super::{
+    state::{Connected, NotReady, Ready, SocketState},
+    tcp::TcpSocket,
+};
 
 lazy_static::lazy_static! {
     static ref REGEX: Regex = Regex::new("\r|\0").unwrap();
@@ -21,14 +24,16 @@ lazy_static::lazy_static! {
 
 /// A TLS socket.
 /// This is a wrapper around a [`TcpSocket`] that provides a TLS connection.
-pub struct TlsSocket<'a> {
+pub struct TlsSocket<'a, S: SocketState = NotReady> {
     /// The TLS connection
     tls_connection: TlsConnection<'a, TcpSocket<Connected>, Aes128GcmSha256>,
     /// The TLS config
     tls_config: TlsConfig<'a, Aes128GcmSha256>,
+    /// marker for the socket state
+    _marker: core::marker::PhantomData<S>,
 }
 
-impl<'a> TlsSocket<'a> {
+impl<'a> TlsSocket<'_> {
     /// Create a new TLS socket.
     /// This will create a new TLS connection using the provided [`TcpSocket`].
     ///
@@ -38,16 +43,15 @@ impl<'a> TlsSocket<'a> {
     /// - `record_write_buf`: A buffer to use for writing records
     ///
     /// # Returns
-    /// A new TLS socket.
-    ///
-    /// The returned connection is not ready yet.
-    /// You must call [`Self::open()`] before you can start sending/receiving data.
+    /// A new TLS socket in the [`NotReady`] state. Use [`TlsSocket::open()`] to get a
+    /// ready socket.
     ///
     /// # Example
     /// ```no_run
     /// let mut read_buf = TlsSocket::new_buffer();
     /// let mut write_buf = TlsSocket::new_buffer();
     /// let tls_socket = TlsSocket::new(tcp_socket, &mut read_buf, &mut write_buf);
+    /// let tls_socket = tls_socket.open(&options)?;
     /// ```
     ///
     /// # Notes
@@ -56,7 +60,7 @@ impl<'a> TlsSocket<'a> {
         socket: TcpSocket<Connected>,
         record_read_buf: &'a mut [u8],
         record_write_buf: &'a mut [u8],
-    ) -> Self {
+    ) -> TlsSocket<'a, NotReady> {
         let tls_config: TlsConfig<'_, Aes128GcmSha256> = TlsConfig::new();
 
         let tls_connection: TlsConnection<TcpSocket<Connected>, Aes128GcmSha256> =
@@ -64,6 +68,7 @@ impl<'a> TlsSocket<'a> {
         TlsSocket {
             tls_connection,
             tls_config,
+            _marker: core::marker::PhantomData,
         }
     }
 
@@ -83,8 +88,19 @@ impl<'a> TlsSocket<'a> {
     pub fn new_buffer() -> [u8; 16_384] {
         [0; 16_384]
     }
+}
 
+impl<'a> TlsSocket<'a, Ready> {
     /// Write all data to the TLS connection.
+    ///
+    /// Writes until all data is written or an error occurs.
+    ///
+    /// # Parameters
+    /// - `buf`: The buffer containing the data to be sent.
+    ///
+    /// # Returns
+    /// - `Ok(())` if the write was successful.
+    /// - `Err(TlsError)` if the write was unsuccessful.
     ///
     /// # Errors
     /// [`embedded_tls::TlsError`] if the write fails.
@@ -94,10 +110,14 @@ impl<'a> TlsSocket<'a> {
 
     /// Read data from the TLS connection and converts it to a [`String`].
     ///
+    /// # Returns
+    /// - `Ok(String)` if the read was successful.
+    /// - `Err(TlsError)` if the read was unsuccessful.
+    ///
     /// # Errors
     /// [`embedded_tls::TlsError`] if the read fails.
     pub fn read_string(&mut self) -> Result<String, embedded_tls::TlsError> {
-        let mut buf = Self::new_buffer();
+        let mut buf = TlsSocket::new_buffer();
         let _ = self.read(&mut buf)?;
 
         let text = String::from_utf8_lossy(&buf);
@@ -106,66 +126,80 @@ impl<'a> TlsSocket<'a> {
     }
 }
 
-impl ErrorType for TlsSocket<'_> {
+impl<S: SocketState> ErrorType for TlsSocket<'_, S> {
+    /// The error type for the TLS socket.
     type Error = embedded_tls::TlsError;
 }
 
-impl OptionType for TlsSocket<'_> {
-    type Options<'a> = TlsSocketOptions<'a>;
+impl<S: SocketState> OptionType for TlsSocket<'_, S> {
+    /// The options type for the TLS socket.
+    type Options<'b> = TlsSocketOptions<'b>;
 }
 
-impl<'a, 'b> Open<'a> for TlsSocket<'b>
+impl<'a, 'b> Open<'a, 'b> for TlsSocket<'b, NotReady>
 where
     'a: 'b,
 {
-    type Return<'c> = Self;
+    type Return = TlsSocket<'a, Ready>;
     /// Open the TLS connection.
     ///
     /// # Parameters
-    /// - `options`: The TLS options
+    /// - `options`: The TLS options, of type [`TlsSocketOptions`].
     ///
     /// # Returns
-    /// A new TLS socket, or an error if opening fails.
+    /// A new [`TlsSocket<Ready>`], or an error if opening fails.
     ///
     /// # Example
     /// ```no_run
     /// let tls_socket = TlsSocket::new(tcp_socket, &mut read_buf, &mut write_buf);
-    /// tls_socket = tls_socket.open(&options)?;
+    /// let tls_socket = tls_socket.open(&options)?;
     /// ```
     ///
-    /// # Notes
-    /// The function takes ownership of the socket, and returns a new socket that has the connection open.
+    /// # Notes
+    /// The function takes ownership of the socket ([`TcpSocket<NotReady>`]), and returns a new socket of type [`TlsSocket<Ready>`].
     /// Therefore, you must assign the returned socket to a variable in order to use it.
-    fn open(mut self, options: &'a Self::Options<'a>) -> Result<Self, embedded_tls::TlsError> {
+    fn open(self, options: &'b Self::Options<'_>) -> Result<Self::Return, embedded_tls::TlsError>
+    where
+        'b: 'a,
+    {
         let mut rng = ChaCha20Rng::seed_from_u64(options.seed());
 
-        self.tls_config = self.tls_config.with_server_name(options.server_name());
+        let mut tls_socket: TlsSocket<Ready> = TlsSocket {
+            tls_connection: self.tls_connection,
+            tls_config: self.tls_config,
+            _marker: core::marker::PhantomData,
+        };
+
+        tls_socket.tls_config = tls_socket
+            .tls_config
+            .with_server_name(options.server_name());
 
         if options.rsa_signatures_enabled() {
-            self.tls_config = self.tls_config.enable_rsa_signatures();
+            tls_socket.tls_config = tls_socket.tls_config.enable_rsa_signatures();
         }
 
         if options.reset_max_fragment_length() {
-            self.tls_config = self.tls_config.reset_max_fragment_length();
+            tls_socket.tls_config = tls_socket.tls_config.reset_max_fragment_length();
         }
 
         if let Some(cert) = options.cert() {
-            self.tls_config = self.tls_config.with_cert(cert.clone());
+            tls_socket.tls_config = tls_socket.tls_config.with_cert(cert.clone());
         }
 
         if let Some(ca) = options.ca() {
-            self.tls_config = self.tls_config.with_ca(ca.clone());
+            tls_socket.tls_config = tls_socket.tls_config.with_ca(ca.clone());
         }
 
-        let tls_context = TlsContext::new(&self.tls_config, &mut rng);
-        self.tls_connection
+        let tls_context = TlsContext::new(&tls_socket.tls_config, &mut rng);
+        tls_socket
+            .tls_connection
             .open::<ChaCha20Rng, NoVerify>(tls_context)?;
 
-        Ok(self)
+        Ok(tls_socket)
     }
 }
 
-impl embedded_io::Read for TlsSocket<'_> {
+impl embedded_io::Read for TlsSocket<'_, Ready> {
     /// Read data from the TLS connection.
     ///
     /// # Parameters
@@ -179,7 +213,7 @@ impl embedded_io::Read for TlsSocket<'_> {
     }
 }
 
-impl embedded_io::Write for TlsSocket<'_> {
+impl embedded_io::Write for TlsSocket<'_, Ready> {
     /// Write data to the TLS connection.
     ///
     /// # Parameters
@@ -197,3 +231,5 @@ impl embedded_io::Write for TlsSocket<'_> {
         self.tls_connection.flush()
     }
 }
+
+impl EasySocket for TlsSocket<'_, Ready> {}
