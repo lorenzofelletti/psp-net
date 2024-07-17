@@ -46,14 +46,12 @@ impl<'a> TlsSocket<'_> {
     /// A new TLS socket in the [`NotReady`] state. Use [`TlsSocket::open()`] to get a
     /// ready socket.
     ///
-    /// The returned connection is not ready yet.
-    /// You must call [`Self::open()`] before you can start sending/receiving data.
-    ///
     /// # Example
     /// ```no_run
     /// let mut read_buf = TlsSocket::new_buffer();
     /// let mut write_buf = TlsSocket::new_buffer();
     /// let tls_socket = TlsSocket::new(tcp_socket, &mut read_buf, &mut write_buf);
+    /// let tls_socket = tls_socket.open(&options)?;
     /// ```
     ///
     /// # Notes
@@ -95,6 +93,15 @@ impl<'a> TlsSocket<'_> {
 impl<'a> TlsSocket<'a, Ready> {
     /// Write all data to the TLS connection.
     ///
+    /// Writes until all data is written or an error occurs.
+    ///
+    /// # Parameters
+    /// - `buf`: The buffer containing the data to be sent.
+    ///
+    /// # Returns
+    /// - `Ok(())` if the write was successful.
+    /// - `Err(TlsError)` if the write was unsuccessful.
+    ///
     /// # Errors
     /// [`embedded_tls::TlsError`] if the write fails.
     pub fn write_all(&mut self, buf: &[u8]) -> Result<(), embedded_tls::TlsError> {
@@ -102,6 +109,10 @@ impl<'a> TlsSocket<'a, Ready> {
     }
 
     /// Read data from the TLS connection and converts it to a [`String`].
+    ///
+    /// # Returns
+    /// - `Ok(String)` if the read was successful.
+    /// - `Err(TlsError)` if the read was unsuccessful.
     ///
     /// # Errors
     /// [`embedded_tls::TlsError`] if the read fails.
@@ -116,11 +127,13 @@ impl<'a> TlsSocket<'a, Ready> {
 }
 
 impl<S: SocketState> ErrorType for TlsSocket<'_, S> {
+    /// The error type for the TLS socket.
     type Error = embedded_tls::TlsError;
 }
 
 impl<S: SocketState> OptionType for TlsSocket<'_, S> {
-    type Options<'a> = TlsSocketOptions<'a>;
+    /// The options type for the TLS socket.
+    type Options<'b> = TlsSocketOptions<'b>;
 }
 
 impl<'a, 'b> Open<'a, 'b> for TlsSocket<'b, NotReady>
@@ -131,21 +144,21 @@ where
     /// Open the TLS connection.
     ///
     /// # Parameters
-    /// - `options`: The TLS options
+    /// - `options`: The TLS options, of type [`TlsSocketOptions`].
     ///
     /// # Returns
-    /// A new TLS socket, or an error if opening fails.
+    /// A new [`TlsSocket<Ready>`], or an error if opening fails.
     ///
     /// # Example
     /// ```no_run
     /// let tls_socket = TlsSocket::new(tcp_socket, &mut read_buf, &mut write_buf);
-    /// tls_socket = tls_socket.open(&options)?;
+    /// let tls_socket = tls_socket.open(&options)?;
     /// ```
     ///
-    /// # Notes
-    /// The function takes ownership of the socket, and returns a new socket that has the connection open.
+    /// # Notes
+    /// The function takes ownership of the socket ([`TcpSocket<NotReady>`]), and returns a new socket of type [`TlsSocket<Ready>`].
     /// Therefore, you must assign the returned socket to a variable in order to use it.
-    fn open(self, options: &'b Self::Options<'b>) -> Result<Self::Return, embedded_tls::TlsError>
+    fn open(self, options: &'b Self::Options<'_>) -> Result<Self::Return, embedded_tls::TlsError>
     where
         'b: 'a,
     {
