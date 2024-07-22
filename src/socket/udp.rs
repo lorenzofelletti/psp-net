@@ -224,7 +224,7 @@ impl UdpSocket<Bound> {
     /// # Errors
     /// - Any [`SocketError`] if the read was unsuccessful
     #[allow(unused)]
-    pub fn _read_from(
+    pub fn read_from(
         mut self,
         buf: &mut [u8],
     ) -> Result<(usize, UdpSocket<Connected>), SocketError> {
@@ -250,7 +250,7 @@ impl UdpSocket<Bound> {
     ///
     /// # Parameters
     /// - `buf`: The buffer containing the data to send
-    ///
+    /// - `to`: The address to send the data to
     ///
     /// # Returns
     /// - `Ok((usize, UdpSocket<Connected>))` if the send was successful. The number of bytes sent
@@ -259,10 +259,9 @@ impl UdpSocket<Bound> {
     /// # Errors
     /// - Any [`SocketError`] if the send was unsuccessful
     #[allow(unused)]
-    pub fn _write_to(
+    pub fn write_to(
         self,
         buf: &[u8],
-        len: usize,
         to: SocketAddr,
     ) -> Result<(usize, UdpSocket<Connected>), SocketError> {
         let sockaddr = match to {
@@ -278,7 +277,7 @@ impl UdpSocket<Bound> {
             sys::sceNetInetSendto(
                 *self.fd,
                 buf.as_ptr().cast::<c_void>(),
-                len,
+                buf.len(),
                 self.send_flags.as_i32(),
                 &sockaddr,
                 socklen,
@@ -306,7 +305,7 @@ impl UdpSocket<Connected> {
     /// # Errors
     /// - Any [`SocketError`] if the read was unsuccessful
     #[allow(unused)]
-    pub fn _read(&mut self, buf: &mut [u8]) -> Result<usize, SocketError> {
+    fn _read(&mut self, buf: &mut [u8]) -> Result<usize, SocketError> {
         let result = unsafe {
             sys::sceNetInetRecv(
                 *self.fd,
@@ -331,7 +330,7 @@ impl UdpSocket<Connected> {
     /// # Errors
     /// - Any [`SocketError`] if the send was unsuccessful
     #[allow(unused)]
-    pub fn _write(&mut self, buf: &[u8]) -> Result<usize, SocketError> {
+    fn _write(&mut self, buf: &[u8]) -> Result<usize, SocketError> {
         self.buffer.append_buffer(buf);
         self.send()
     }
