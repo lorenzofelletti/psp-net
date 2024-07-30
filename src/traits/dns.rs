@@ -5,7 +5,6 @@ use core::fmt::Debug;
 use alloc::string::String;
 
 use embedded_nal::SocketAddr;
-use psp::sys::in_addr;
 
 /// Trait for resolving hostnames
 ///
@@ -30,7 +29,7 @@ pub trait ResolveAddr {
     ///
     /// # Errors
     /// An error will be returned if the IP address could not be resolved.
-    fn resolve_addr(&mut self, addr: in_addr) -> Result<String, Self::Error>;
+    fn resolve_addr(&mut self, addr: SocketAddr) -> Result<String, Self::Error>;
 }
 
 /// Trait for resolving hostnames and IP addresses.

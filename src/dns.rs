@@ -5,7 +5,7 @@ use alloc::{
     string::{String, ToString},
     vec as a_vec,
 };
-use dns_protocol::{Flags, Question, ResourceRecord};
+use dns_protocol::{Flags, Label, Question, ResourceRecord};
 use embedded_io::{Read, Write};
 use embedded_nal::{IpAddr, Ipv4Addr, SocketAddr};
 use psp::sys::in_addr;
@@ -25,8 +25,15 @@ lazy_static::lazy_static! {
 /// Create a DNS query for an A record
 #[allow(unused)]
 #[must_use]
-pub fn create_a_type_query(domain: &str) -> Question {
+fn create_a_type_query(domain: &str) -> Question {
     Question::new(domain, dns_protocol::ResourceType::A, 1)
+}
+
+/// Create a DNS query for reverse lookup
+#[allow(unused)]
+#[must_use]
+fn create_reverse_query<'a>(domain: impl Into<Label<'a>>) -> Question<'a> {
+    Question::new(domain, dns_protocol::ResourceType::Ptr, 1)
 }
 
 /// An error that can occur when using a DNS resolver
@@ -94,7 +101,7 @@ impl DnsResolver {
     /// - [`DnsError::HostnameResolutionFailed`]: The hostname could not be resolved.
     ///   This may happen if the connection of the socket fails, or if the DNS server
     ///   does not answer the query, or any other error occurs
-    pub fn resolve(&mut self, host: &str) -> Result<in_addr, DnsError> {
+    fn resolve(&mut self, host: &str) -> Result<in_addr, DnsError> {
         // create a new query
         let mut questions = [super::dns::create_a_type_query(host)];
         let query = dns_protocol::Message::new(
@@ -166,6 +173,69 @@ impl DnsResolver {
         }
     }
 
+    fn resolve_hostname(&mut self, addr: &str) -> Result<String, DnsError> {
+        let mut questions = [create_reverse_query(addr)];
+        let query = dns_protocol::Message::new(
+            0x42,
+            Flags::standard_query(),
+            &mut questions,
+            &mut [],
+            &mut [],
+            &mut [],
+        );
+
+        // create a new buffer with the size of the message
+        let mut tx_buf = a_vec![0u8; query.space_needed()];
+        query.write(&mut tx_buf).map_err(|_| {
+            DnsError::AddressResolutionFailed("Could not serialize query".to_owned())
+        })?;
+
+        // send the message to the DNS server
+        let _ = self
+            .udp_socket
+            .write(&tx_buf)
+            .map_err(|e| DnsError::AddressResolutionFailed(e.to_string()))?;
+
+        let mut rx_buf = [0u8; 1024];
+
+        // receive the response from the DNS server
+        let data_len = self
+            .udp_socket
+            .read(&mut rx_buf)
+            .map_err(|e| DnsError::AddressResolutionFailed(e.to_string()))?;
+
+        if data_len == 0 {
+            return Err(DnsError::AddressResolutionFailed(
+                "No data received".to_owned(),
+            ));
+        }
+
+        // parse the response
+        let mut answers = [ResourceRecord::default(); 16];
+        let mut authority = [ResourceRecord::default(); 16];
+        let mut additional = [ResourceRecord::default(); 16];
+        let message = dns_protocol::Message::read(
+            &rx_buf[..data_len],
+            &mut questions,
+            &mut answers,
+            &mut authority,
+            &mut additional,
+        )
+        .map_err(|_| DnsError::AddressResolutionFailed("Could not parse response".to_owned()))?;
+
+        if message.answers().is_empty() {
+            return Err(DnsError::AddressResolutionFailed(
+                "No answers received".to_owned(),
+            ));
+        }
+        let answer = message.answers()[0];
+
+        match answer.data().len() {
+            0 => Err(DnsError::AddressResolutionFailed("Empty answer".to_owned())),
+            _ => Ok(String::from_utf8_lossy(answer.data()).to_string()),
+        }
+    }
+
     /// Get the [`SocketAddr`] of the DNS server
     #[must_use]
     #[inline]
@@ -180,7 +250,7 @@ impl traits::dns::ResolveHostname for DnsResolver {
     /// Resolve a hostname to an IP address
     ///
     /// # Parameters
-    /// - `host`: The hostname to resolve
+    /// - `hostname`: The hostname to resolve
     ///
     /// # Returns
     /// - `Ok(SocketAddr)`: The IP address of the hostname
@@ -198,8 +268,16 @@ impl traits::dns::ResolveHostname for DnsResolver {
 impl traits::dns::ResolveAddr for DnsResolver {
     type Error = DnsError;
 
-    fn resolve_addr(&mut self, _addr: in_addr) -> Result<String, DnsError> {
-        todo!("resolve_addr")
+    fn resolve_addr(&mut self, addr: SocketAddr) -> Result<String, DnsError> {
+        if matches!(addr, SocketAddr::V6(_)) {
+            return Err(DnsError::HostnameResolutionFailed(
+                "IPv6 not supported".to_owned(),
+            ));
+        }
+
+        let addr = addr.ip().to_string();
+
+        self.resolve_hostname(&addr)
     }
 }
 
