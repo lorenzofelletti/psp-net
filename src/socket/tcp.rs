@@ -176,7 +176,7 @@ impl TcpSocket<Connected> {
     /// "Low level" read function. Read data from the socket and store it in
     /// the buffer. This should not be used if you want to use this socket
     /// [`EasySocket`] style.
-    pub fn _read(&self, buf: &mut [u8]) -> Result<usize, SocketError> {
+    fn _read(&self, buf: &mut [u8]) -> Result<usize, SocketError> {
         let result = unsafe {
             sys::sceNetInetRecv(
                 *self.fd,
@@ -196,7 +196,7 @@ impl TcpSocket<Connected> {
     ///
     /// # Errors
     /// - A [`SocketError`] if the write was unsuccessful
-    pub fn _write(&mut self, buf: &[u8]) -> Result<usize, SocketError> {
+    fn _write(&mut self, buf: &[u8]) -> Result<usize, SocketError> {
         self.buffer.append_buffer(buf);
         self.send()
     }
@@ -227,10 +227,12 @@ impl TcpSocket<Connected> {
 }
 
 impl<S: SocketState> ErrorType for TcpSocket<S> {
+    /// The error type of the socket
     type Error = SocketError;
 }
 
 impl<S: SocketState> OptionType for TcpSocket<S> {
+    /// The options of the socket
     type Options<'a> = SocketOptions;
 }
 
