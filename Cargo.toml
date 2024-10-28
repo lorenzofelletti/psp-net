@@ -24,5 +24,4 @@ regex = { version = "1.10", default-features = false }
 lazy_static = { version = "1.5.0", default-features = false, features = [
     "spin_no_std",
 ] }
-embedded-nal = "0.8.0"
 bitflags = { version = "2.6.0", default-features = false }

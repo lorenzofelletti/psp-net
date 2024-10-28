@@ -5,9 +5,9 @@ use alloc::{
     string::{String, ToString},
     vec as a_vec,
 };
+use core::net::{IpAddr, Ipv4Addr, SocketAddr};
 use dns_protocol::{Flags, Question, ResourceRecord};
 use embedded_io::{Read, Write};
-use embedded_nal::{IpAddr, Ipv4Addr, SocketAddr};
 use psp::sys::in_addr;
 
 use crate::socket::state::Connected;

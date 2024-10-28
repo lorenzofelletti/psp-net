@@ -4,7 +4,7 @@ use core::fmt::Debug;
 
 use alloc::string::String;
 
-use embedded_nal::SocketAddr;
+use core::net::SocketAddr;
 use psp::sys::in_addr;
 
 /// Trait for resolving hostnames

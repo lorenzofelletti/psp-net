@@ -3,7 +3,7 @@
 use alloc::vec::Vec;
 use embedded_io::{ErrorType, Read, Write};
 
-use embedded_nal::SocketAddr;
+use core::net::SocketAddr;
 use psp::sys;
 
 use core::ffi::c_void;

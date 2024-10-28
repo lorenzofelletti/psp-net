@@ -1,8 +1,8 @@
 #![allow(clippy::module_name_repetitions)]
 
 use alloc::vec::Vec;
+use core::net::{IpAddr, Ipv4Addr, SocketAddr};
 use embedded_io::{ErrorType, Read, Write};
-use embedded_nal::{IpAddr, Ipv4Addr, SocketAddr};
 use psp::sys::{self, sockaddr, socklen_t};
 
 use core::ffi::c_void;
