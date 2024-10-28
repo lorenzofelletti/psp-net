@@ -6,7 +6,7 @@
 
 #![allow(clippy::module_name_repetitions)]
 
-use core::net::{Ipv4Addr, SocketAddrV4};
+use core::net::Ipv4Addr;
 use psp::sys::{in_addr, sockaddr};
 
 use super::netc;
@@ -81,3 +81,4 @@ impl ToSocketAddr for sockaddr {
 
 // re-exports
 pub type SocketAddr = core::net::SocketAddr;
+pub type SocketAddrV4 = core::net::SocketAddrV4;
