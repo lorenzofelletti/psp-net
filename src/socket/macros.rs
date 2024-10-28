@@ -1,3 +1,5 @@
+use alloc::string::ToString;
+
 #[macro_export]
 /// Get the current timestamp
 macro_rules! timestamp {
@@ -27,6 +29,9 @@ macro_rules! timestamp {
 /// - `enable_rsa_signatures`: (Optional, default `true`) Whether to enable RSA signatures
 /// - `reset_max_fragment_length`: (Optional, default `false`) Whether to reset the max fragment length
 ///
+/// # Safety
+/// - The macro will panic if the provided IP address is invalid
+///
 /// # Example
 /// ```no_run
 /// tls_socket! {
@@ -40,6 +45,8 @@ macro_rules! tls_socket {
     (
         name: $name:ident,
         host $host:expr => $remote:expr,
+        send_flags $send_flags:expr,
+        recv_flags $recv_flags:expr,
         seed $seed:expr,
         cert $cert:expr,
         ca $ca:expr,
@@ -60,7 +67,14 @@ macro_rules! tls_socket {
         let ip = Ipv4Addr::from_str($remote).unwrap();
         let addr = SocketAddr::V4(SocketAddrV4::new(ip, 443));
         let s = TcpSocket::new();
-        if let Ok(s) = s {
+
+        if let Ok(mut s) = s {
+            if let Some(send_flags) = $send_flags {
+                s.set_send_flags(send_flags);
+            }
+            if let Some(recv_flags) = $recv_flags {
+                s.set_recv_flags(recv_flags);
+            }
             let s = s.connect(addr);
             if let Ok(s) = s {
                 let mut read_buf = TlsSocket::new_buffer();
@@ -82,6 +96,8 @@ macro_rules! tls_socket {
     (
         name: $name:ident,
         host $host:expr => $remote:expr,
+        $(send_flags $send_flags:expr,)?
+        $(recv_flags $recv_flags:expr,)?
         $(seed $seed:expr,)?
         $(cert $cert:expr,)?
         $(ca $ca:expr,)?
@@ -98,10 +114,14 @@ macro_rules! tls_socket {
         let enable_rsa_signatures = enable_rsa_signatures.unwrap_or(true);
         let reset_max_fragment_length = $crate::some_or_none!($($mfl)?);
         let reset_max_fragment_length = reset_max_fragment_length.unwrap_or(false);
+        let send_flags = $crate::some_or_none!($($send_flags)?);
+        let recv_flags = $crate::some_or_none!($($recv_flags)?);
 
         tls_socket! {
             name: $name,
             host $host => $remote,
+            send_flags send_flags,
+            recv_flags recv_flags,
             seed seed,
             cert cert,
             ca ca,
@@ -112,11 +132,17 @@ macro_rules! tls_socket {
     (
         name: $name:ident,
         host $host:expr => $remote:expr,
+        $(send_flags $send_flags:expr,)?
+        $(recv_flags $recv_flags:expr,)?
         opts $opts:expr,
     ) => {
+        let send_flags = $crate::some_or_none!($($send_flags)?);
+        let recv_flags = $crate::some_or_none!($($recv_flags)?);
         tls_socket! {
             name: $name,
             host $host => $remote,
+            send_flags send_flags,
+            recv_flags recv_flags,
             seed $opts.seed(),
             cert $opts.cert(),
             ca $opts.ca(),
