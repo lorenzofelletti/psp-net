@@ -2,7 +2,7 @@ pub trait OptionType {
     type Options<'b>: ?Sized;
 }
 
-/// Type implementing this trait support a Open semantics.
+/// Types implementing this trait support a Open semantics.
 pub trait Open<'a, 'b>: ErrorType + OptionType {
     type Return;
 
