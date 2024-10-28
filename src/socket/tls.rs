@@ -22,6 +22,9 @@ lazy_static::lazy_static! {
     static ref REGEX: Regex = Regex::new("\r|\0").unwrap();
 }
 
+/// TLS maximum fragment length, equivalent to 2^14 bytes (`16_384` bytes)
+pub const MAX_FRAGMENT_LENGTH: u16 = 16_384;
+
 /// A TLS socket.
 /// This is a wrapper around a [`TcpSocket`] that provides a TLS connection.
 pub struct TlsSocket<'a, S: SocketState = NotReady> {
@@ -76,7 +79,7 @@ impl<'a> TlsSocket<'_> {
     /// It is a utility function to create the read/write buffer to pass to [`Self::new()`].
     ///
     /// # Returns
-    /// A new buffer of `16_384` bytes.
+    /// A new buffer of [`MAX_FRAGMENT_LENGTH`] (`16_384`) bytes.
     ///
     /// # Example
     /// ```no_run
@@ -85,7 +88,7 @@ impl<'a> TlsSocket<'_> {
     /// let tls_socket = TlsSocket::new(tcp_socket, &mut read_buf, &mut write_buf);
     /// ```
     #[must_use]
-    pub fn new_buffer() -> [u8; 16_384] {
+    pub fn new_buffer() -> [u8; MAX_FRAGMENT_LENGTH as usize] {
         [0; 16_384]
     }
 }
