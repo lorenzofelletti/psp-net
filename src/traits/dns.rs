@@ -11,7 +11,6 @@ use psp::sys::in_addr;
 ///
 /// A type implementing this trait can resolve a hostname to an IP address.
 ///
-
 pub trait ResolveHostname {
     type Error: Debug;
     /// Resolve a hostname to an IP address
