@@ -1,5 +1,7 @@
 #![allow(clippy::module_name_repetitions)]
 
+use core::fmt::Debug;
+
 use alloc::string::String;
 use embedded_io::{ErrorType, Read, Write};
 use embedded_tls::{blocking::TlsConnection, Aes128GcmSha256, NoVerify, TlsConfig, TlsContext};
@@ -27,6 +29,9 @@ pub const MAX_FRAGMENT_LENGTH: u16 = 16_384;
 
 /// A TLS socket.
 /// This is a wrapper around a [`TcpSocket`] that provides a TLS connection.
+///
+/// # Notes
+/// For the Debug trait a dummy implementation is provided.
 pub struct TlsSocket<'a, S: SocketState = NotReady> {
     /// The TLS connection
     tls_connection: TlsConnection<'a, TcpSocket<Connected>, Aes128GcmSha256>,
@@ -34,6 +39,12 @@ pub struct TlsSocket<'a, S: SocketState = NotReady> {
     tls_config: TlsConfig<'a, Aes128GcmSha256>,
     /// marker for the socket state
     _marker: core::marker::PhantomData<S>,
+}
+
+impl Debug for TlsSocket<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("TlsSocket").finish()
+    }
 }
 
 impl<'a> TlsSocket<'_> {

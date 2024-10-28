@@ -47,10 +47,12 @@ macro_rules! tls_socket {
         reset_max_fragment_length $mfl:expr,
     ) => {
         use core::net::Ipv4Addr;
+        use core::str::FromStr;
         use $crate::socket::state::Ready;
         use $crate::types::TlsSocketOptions;
         use $crate::socket::tcp::TcpSocket;
         use $crate::socket::tls::TlsSocket;
+        use $crate::traits::io::Open;
         use $crate::socket::{error::SocketError, SocketAddr, SocketAddrV4};
 
         let mut $name: Result<TlsSocket<Ready>, SocketError> = Err(SocketError::Other);
@@ -170,6 +172,7 @@ macro_rules! read {
 #[macro_export]
 macro_rules! write {
     ($buf:ident => $socket:ident) => {{
+        use core::slice::SlicePattern;
         $socket.write_all($buf.as_slice())
     }};
 }
