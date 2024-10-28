@@ -12,6 +12,8 @@ use psp::sys::{in_addr, sockaddr};
 use super::netc;
 
 pub mod error;
+#[cfg(feature = "macros")]
+pub mod macros;
 mod sce;
 pub mod state;
 pub mod tcp;
