@@ -115,6 +115,21 @@ macro_rules! tls_socket {
             reset_max_fragment_length reset_max_fragment_length,
         }
     };
+    (
+        name: $name:ident,
+        host $host:expr => $remote:expr,
+        opts $opts:expr,
+    ) => {
+        tls_socket! {
+            name: $name,
+            host $host => $remote,
+            seed $opts.seed(),
+            cert $opts.cert(),
+            ca $opts.ca(),
+            enable_rsa_signatures $opts.enable_rsa_signatures(),
+            reset_max_fragment_length $opts.reset_max_fragment_length(),
+        }
+    }
 }
 
 /// Read from a TLS socket
@@ -166,38 +181,3 @@ macro_rules! write {
         $socket.write_all($buf.as_slice())
     }};
 }
-
-// fn test() -> Result<(), SocketError> {
-//     tls_socket! {
-//         name: _s,
-//         host  "google.com" => "127.0.0.1",
-//     }
-//     let mut socket = _s?;
-
-//     read!(from socket).map_err(|_| SocketError::Other)?;
-//     read!(string from socket).map_err(|_| SocketError::Other)?;
-//     let mut buf = TlsSocket::new_buffer();
-//     read!(from socket => buf).map_err(|_| SocketError::Other)?;
-//     write!(buf => socket).map_err(|_| SocketError::Other)?;
-//     let buf = &buf.as_slice()[..];
-//     let res = write! {buf => socket};
-//     if res.is_err() {
-//         return Err(SocketError::Other);
-//     }
-
-//     if let Ok(s) = read!(string from socket) {
-//         psp::dprintln!("{}", s);
-//     }
-
-//     let buf = buf.as_slice().as_slice().as_slice();
-//     _ = socket.write_all(buf);
-
-//     let _ = socket.write_all("sacw".as_bytes());
-
-//     Ok(())
-// }
-
-// #[allow(unused)]
-// fn test2() {
-//     test().unwrap();
-// }
