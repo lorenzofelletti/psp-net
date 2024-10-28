@@ -1,17 +1,24 @@
+//! Traits implemented by the crate types.
+
 use alloc::vec::Vec;
 use core::fmt::Debug;
 
 pub mod dns;
 pub mod io;
 
-/// A trait for a buffer that can be used with a socket
+/// A trait for a buffer that can be used with a socket.
+///
+/// It can be used by either a read or write buffer of a socket.
 pub trait SocketBuffer: Clone + Debug + Default {
     /// Create a new buffer
     fn new() -> Self
     where
         Self: Sized;
 
-    /// Append a buffer to the end of itself
+    /// Append a buffer to the end.
+    ///
+    /// # Arguments
+    /// - `buf`: buffer containing the data to be appended
     fn append_buffer(&mut self, buf: &[u8]);
 
     /// Shift the buffer to the left by amount
@@ -30,6 +37,9 @@ pub trait SocketBuffer: Clone + Debug + Default {
     }
 
     /// Get the buffer as a slice
+    ///
+    /// # Returns
+    /// - The buffer as a slice of bytes
     fn as_slice(&self) -> &[u8];
 
     /// Get the length of the buffer

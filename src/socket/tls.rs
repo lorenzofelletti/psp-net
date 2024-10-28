@@ -90,7 +90,7 @@ impl<'a> TlsSocket<'_> {
     }
 }
 
-impl<'a> TlsSocket<'a, Ready> {
+impl TlsSocket<'_, Ready> {
     /// Write all data to the TLS connection.
     ///
     /// Writes until all data is written or an error occurs.

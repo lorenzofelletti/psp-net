@@ -1,3 +1,9 @@
+//! This module contains the socket types.
+//! Currently, three socket types are provided:
+//! - [`udp::UdpSocket`] – a UDP socket
+//! - [`tcp::TcpSocket`] – a TCP socket
+//! - [`tls::TlsSocket`] – a TCP socket wrapper that provides a TLS connection
+
 #![allow(clippy::module_name_repetitions)]
 
 use embedded_nal::{Ipv4Addr, SocketAddrV4};
@@ -6,7 +12,7 @@ use psp::sys::{in_addr, sockaddr};
 use super::netc;
 
 pub mod error;
-pub mod sce;
+mod sce;
 pub mod state;
 pub mod tcp;
 pub mod tls;

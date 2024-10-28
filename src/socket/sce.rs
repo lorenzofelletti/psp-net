@@ -1,3 +1,5 @@
+//! This module contains SCE specific types wrappers.
+
 use core::ops::Deref;
 
 use alloc::rc::Rc;
@@ -38,6 +40,13 @@ impl Deref for RawSocketFileDescriptor {
 pub struct SocketFileDescriptor(pub(crate) Rc<RawSocketFileDescriptor>);
 
 impl SocketFileDescriptor {
+    /// Create a new socket file descriptor.
+    ///
+    /// # Arguments
+    /// - `fd`: socket's file descriptor to wrap
+    ///
+    /// # Safety
+    /// - `fd` must be a valid socket file descriptor
     pub(crate) fn new(fd: i32) -> Self {
         Self(Rc::new(RawSocketFileDescriptor(fd)))
     }

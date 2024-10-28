@@ -306,7 +306,7 @@ impl UdpSocket<Connected> {
     /// # Errors
     /// - Any [`SocketError`] if the read was unsuccessful
     #[allow(unused)]
-    pub fn _read(&mut self, buf: &mut [u8]) -> Result<usize, SocketError> {
+    pub fn internal_read(&mut self, buf: &mut [u8]) -> Result<usize, SocketError> {
         let result = unsafe {
             sys::sceNetInetRecv(
                 *self.fd,
@@ -331,7 +331,7 @@ impl UdpSocket<Connected> {
     /// # Errors
     /// - Any [`SocketError`] if the send was unsuccessful
     #[allow(unused)]
-    pub fn _write(&mut self, buf: &[u8]) -> Result<usize, SocketError> {
+    pub fn internal_write(&mut self, buf: &[u8]) -> Result<usize, SocketError> {
         self.buffer.append_buffer(buf);
         self.send()
     }
@@ -340,7 +340,7 @@ impl UdpSocket<Connected> {
     ///
     /// # Errors
     /// - Any [`SocketError`] if the flush was unsuccessful.
-    pub fn _flush(&mut self) -> Result<(), SocketError> {
+    pub fn internal_flush(&mut self) -> Result<(), SocketError> {
         while !self.buffer.is_empty() {
             self.send()?;
         }
@@ -373,7 +373,7 @@ impl<S: SocketState> ErrorType for UdpSocket<S> {
     type Error = SocketError;
 }
 
-impl<'a> Open<'a, '_> for UdpSocket<Unbound> {
+impl Open<'_, '_> for UdpSocket<Unbound> {
     type Return = UdpSocket<Connected>;
     /// Open the socket
     ///
@@ -406,7 +406,7 @@ impl Read for UdpSocket<Connected> {
     /// - `Ok(usize)` if the read was successful. The number of bytes read
     /// - `Err(SocketError)` if the read was unsuccessful.
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
-        self._read(buf)
+        self.internal_read(buf)
     }
 }
 
@@ -420,7 +420,7 @@ impl Write for UdpSocket<Connected> {
     /// - `Ok(usize)` if the write was successful. The number of bytes written
     /// - `Err(SocketError)` if the write was unsuccessful.
     fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
-        self._write(buf)
+        self.internal_write(buf)
     }
 
     /// Flush the socket
@@ -428,7 +428,7 @@ impl Write for UdpSocket<Connected> {
     /// # Errors
     /// - Any [`SocketError`] if the flush was unsuccessful.
     fn flush(&mut self) -> Result<(), Self::Error> {
-        self._flush()
+        self.internal_flush()
     }
 }
 

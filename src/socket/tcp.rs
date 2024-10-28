@@ -176,7 +176,7 @@ impl TcpSocket<Connected> {
     /// "Low level" read function. Read data from the socket and store it in
     /// the buffer. This should not be used if you want to use this socket
     /// [`EasySocket`] style.
-    pub fn _read(&self, buf: &mut [u8]) -> Result<usize, SocketError> {
+    pub fn internal_read(&self, buf: &mut [u8]) -> Result<usize, SocketError> {
         let result = unsafe {
             sys::sceNetInetRecv(
                 *self.fd,
@@ -196,12 +196,12 @@ impl TcpSocket<Connected> {
     ///
     /// # Errors
     /// - A [`SocketError`] if the write was unsuccessful
-    pub fn _write(&mut self, buf: &[u8]) -> Result<usize, SocketError> {
+    pub fn internal_write(&mut self, buf: &[u8]) -> Result<usize, SocketError> {
         self.buffer.append_buffer(buf);
         self.send()
     }
 
-    fn _flush(&mut self) -> Result<(), SocketError> {
+    fn internal_flush(&mut self) -> Result<(), SocketError> {
         while !self.buffer.is_empty() {
             self.send()?;
         }
@@ -234,7 +234,7 @@ impl<S: SocketState> OptionType for TcpSocket<S> {
     type Options<'a> = SocketOptions;
 }
 
-impl<'a> Open<'a, '_> for TcpSocket<Unbound> {
+impl Open<'_, '_> for TcpSocket<Unbound> {
     type Return = TcpSocket<Connected>;
     /// Return a TCP socket connected to the remote specified in `options`
     fn open(self, options: &'_ Self::Options<'_>) -> Result<Self::Return, Self::Error>
@@ -260,7 +260,7 @@ impl Read for TcpSocket<Connected> {
     /// - [`SocketError::NotConnected`] if the socket is not connected
     /// - A [`SocketError`] if the read was unsuccessful
     fn read<'m>(&'m mut self, buf: &'m mut [u8]) -> Result<usize, Self::Error> {
-        self._read(buf)
+        self.internal_read(buf)
     }
 }
 
@@ -271,7 +271,7 @@ impl Write for TcpSocket<Connected> {
     /// - [`SocketError::NotConnected`] if the socket is not connected
     /// - A [`SocketError`] if the write was unsuccessful
     fn write<'m>(&'m mut self, buf: &'m [u8]) -> Result<usize, Self::Error> {
-        self._write(buf)
+        self.internal_write(buf)
     }
 
     /// Flush the socket
@@ -279,7 +279,7 @@ impl Write for TcpSocket<Connected> {
     /// # Errors
     /// - A [`SocketError`] if the flush was unsuccessful
     fn flush(&mut self) -> Result<(), SocketError> {
-        self._flush()
+        self.internal_flush()
     }
 }
 
