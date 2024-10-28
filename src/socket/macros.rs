@@ -86,6 +86,8 @@ macro_rules! tls_socket {
         $(enable_rsa_signatures $enable_rsa_signatures:expr,)?
         $(reset_max_fragment_length $mfl:expr,)?
     ) => {
+        use $crate::timestamp;
+
         let seed = $crate::some_or_none!($($seed)?);
         let seed = seed.unwrap_or(timestamp!());
         let cert = $crate::some_or_none!($($cert)?);
