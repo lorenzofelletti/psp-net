@@ -1,13 +1,3 @@
-#[allow(unused)]
-macro_rules! some_or_none {
-    () => {
-        None
-    };
-    ($entity:expr) => {
-        Some($entity)
-    };
-}
-
 ///
 /// # Example
 /// Example GET request
@@ -100,8 +90,8 @@ macro_rules! request {
             method: $method,
             uri: $uri.to_string(),
             headers: a_vec![$(($header.to_string(), $value.to_string()),)*],
-            content_type: some_or_none!($($content_type)?),
-            body: some_or_none!($($body)?).unwrap_or(Vec::new()),
+            content_type: $crate::some_or_none!($($content_type)?),
+            body: $crate::some_or_none!($($body)?).unwrap_or(Vec::new()),
         }
     }};
 }

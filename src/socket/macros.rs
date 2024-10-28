@@ -1,13 +1,3 @@
-#[allow(unused)]
-macro_rules! some_or_none {
-    () => {
-        None
-    };
-    ($entity:expr) => {
-        Some($entity)
-    };
-}
-
 #[macro_export]
 /// Get the current timestamp
 macro_rules! timestamp {
@@ -96,13 +86,13 @@ macro_rules! tls_socket {
         $(enable_rsa_signatures $enable_rsa_signatures:expr,)?
         $(reset_max_fragment_length $mfl:expr,)?
     ) => {
-        let seed = some_or_none!($($seed)?);
+        let seed = $crate::some_or_none!($($seed)?);
         let seed = seed.unwrap_or(timestamp!());
-        let cert = some_or_none!($($cert)?);
-        let ca = some_or_none!($($ca)?);
-        let enable_rsa_signatures = some_or_none!($($enable_rsa_signatures)?);
+        let cert = $crate::some_or_none!($($cert)?);
+        let ca = $crate::some_or_none!($($ca)?);
+        let enable_rsa_signatures = $crate::some_or_none!($($enable_rsa_signatures)?);
         let enable_rsa_signatures = enable_rsa_signatures.unwrap_or(true);
-        let reset_max_fragment_length = some_or_none!($($mfl)?);
+        let reset_max_fragment_length = $crate::some_or_none!($($mfl)?);
         let reset_max_fragment_length = reset_max_fragment_length.unwrap_or(false);
 
         tls_socket! {

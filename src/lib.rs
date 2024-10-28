@@ -12,6 +12,8 @@ pub mod constants;
 pub mod dns;
 #[cfg(feature = "http")]
 pub mod http;
+#[cfg(feature = "macros")]
+pub mod macros;
 pub mod netc;
 pub mod socket;
 pub mod traits;
