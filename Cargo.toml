@@ -11,8 +11,9 @@ rust-version = "1.81"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = []
+default = ["http"]
 macros = []
+http = []
 
 [dependencies]
 psp = { version = "0.3.10" }
@@ -26,3 +27,5 @@ lazy_static = { version = "1.5.0", default-features = false, features = [
     "spin_no_std",
 ] }
 bitflags = { version = "2.6.0", default-features = false }
+httparse = { version = "1.9.5", default-features = false }
+# reqwless = {version = "0.13.0", features = ["alloc"]}

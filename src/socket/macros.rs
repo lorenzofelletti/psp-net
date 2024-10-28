@@ -1,4 +1,4 @@
-#![allow(unused)]
+#[allow(unused)]
 macro_rules! some_or_none {
     () => {
         None

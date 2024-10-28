@@ -10,6 +10,8 @@ extern crate alloc;
 
 pub mod constants;
 pub mod dns;
+#[cfg(feature = "http")]
+pub mod http;
 pub mod netc;
 pub mod socket;
 pub mod traits;
