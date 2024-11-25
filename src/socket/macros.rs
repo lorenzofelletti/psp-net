@@ -1,5 +1,3 @@
-use alloc::string::ToString;
-
 #[macro_export]
 /// Get the current timestamp
 macro_rules! timestamp {

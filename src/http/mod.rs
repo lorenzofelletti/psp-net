@@ -6,6 +6,26 @@ use alloc::string::String;
 pub mod macros;
 mod request;
 
+/// Enum for different supported HTTP versions
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum HttpVersion {
+    V1,
+    #[default]
+    V1_1,
+    V2,
+}
+
+impl fmt::Display for HttpVersion {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            HttpVersion::V1 => write!(f, "HTTP/1"),
+            HttpVersion::V1_1 => write!(f, "HTTP/1.1"),
+            HttpVersion::V2 => write!(f, "HTTP/2"),
+        }
+    }
+}
+
+/// Content Type of the HTTP packet's body.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum ContentType {
     #[default]
