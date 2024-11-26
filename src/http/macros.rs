@@ -31,13 +31,13 @@ macro_rules! request {
                 headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
                 content_type: None,
                 body: Vec::new(),
-                http_version: $crate::some_or_none!($(http_version)?).unwrap_or($crate::http::HttpVersion::V1_1),
+                http_version: $crate::some_or_none!($($http_version)?).unwrap_or($crate::http::HttpVersion::V1_1),
             }
         }
     };
 
     (
-        $host:tt post $uri:tt $($content_type:expr)? $(; $http_version:expr)?,
+        $host:tt post $uri:tt $($content_type:expr)? $(=> $http_version:expr)?,
         $($header:tt => $value:tt),*
         $(body $body:expr)?
     ) => {
@@ -51,7 +51,7 @@ macro_rules! request {
                 headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
                 content_type: $crate::some_or_none!($($content_type)?),
                 body: $crate::some_or_none!($($body)?).unwrap_or(Vec::new()),
-                http_version: $crate::some_or_none!($(http_version)?).unwrap_or($crate::http::HttpVersion::V1_1),
+                http_version: $crate::some_or_none!($($http_version)?).unwrap_or($crate::http::HttpVersion::V1_1),
             }
         }
     };
@@ -71,7 +71,7 @@ macro_rules! request {
                 headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
                 content_type: $crate::some_or_none!($($content_type)?),
                 body: $crate::some_or_none!($($body)?).unwrap_or(Vec::new()),
-                http_version: $crate::some_or_none!($(http_version)?).unwrap_or($crate::http::HttpVersion::V1_1),
+                http_version: $crate::some_or_none!($($http_version)?).unwrap_or($crate::http::HttpVersion::V1_1),
             }
         }
     };
@@ -91,7 +91,7 @@ macro_rules! request {
                 headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
                 content_type: $crate::some_or_none!($($content_type)?),
                 body: $crate::some_or_none!($($body)?).unwrap_or(Vec::new()),
-                http_version: $crate::some_or_none!($(http_version)?).unwrap_or($crate::http::HttpVersion::V1_1),
+                http_version: $crate::some_or_none!($($http_version)?).unwrap_or($crate::http::HttpVersion::V1_1),
             }
         }
     };
