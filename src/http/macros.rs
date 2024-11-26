@@ -1,7 +1,3 @@
-use alloc::{string::ToString, vec::Vec};
-
-use crate::http::{ContentType, Method};
-
 /// Macro helping craft HTTP requests
 ///
 /// # Example

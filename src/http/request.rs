@@ -1,12 +1,6 @@
 use core::fmt;
 
-use alloc::{
-    format,
-    string::{String, ToString},
-    vec::Vec,
-};
-use rand_chacha::rand_core::impls;
-use regex::bytes;
+use alloc::{format, string::String, vec::Vec};
 
 use super::{ContentType, HttpVersion};
 
