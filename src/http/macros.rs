@@ -22,7 +22,7 @@ use crate::http::{ContentType, Method};
 #[macro_export]
 macro_rules! request {
     (
-        $host:tt get $uri:tt $(ver $http_version:expr)?,
+        $host:tt get $uri:tt $(; $http_version:expr)?,
         $($header:expr => $value:expr,)*
     ) => {
         {
@@ -41,7 +41,7 @@ macro_rules! request {
     };
 
     (
-        $host:tt post $uri:tt $($content_type:expr)? $(ver $http_version:expr)?,
+        $host:tt post $uri:tt $($content_type:expr)? $(; $http_version:expr)?,
         $($header:tt => $value:tt),*
         $(body $body:expr)?
     ) => {
@@ -61,7 +61,7 @@ macro_rules! request {
     };
 
     (
-        $host:tt put $uri:tt $($content_type:expr)? $(ver $http_version:expr)?,
+        $host:tt put $uri:tt $($content_type:expr)? $(; $http_version:expr)?,
         $($header:tt => $value:tt),*
         $(body $body:expr)?
     ) => {
@@ -81,7 +81,7 @@ macro_rules! request {
     };
 
     (
-        $host:tt delete $uri:tt $($content_type:expr)? $(ver $http_version:expr)?,
+        $host:tt delete $uri:tt $($content_type:expr)? $(; $http_version:expr)?,
         $($header:tt => $value:tt),*
         $(body $body:expr)?
     ) => {
