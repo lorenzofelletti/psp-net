@@ -37,7 +37,7 @@ macro_rules! request {
     };
 
     (
-        $host:tt post $uri:tt $($content_type:expr)? $(=> $http_version:expr)?,
+        $host:tt post $uri:tt $($content_type:expr)? $(; $http_version:expr)?,
         $($header:tt => $value:tt),*
         $(body $body:expr)?
     ) => {
