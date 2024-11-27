@@ -1,9 +1,16 @@
 use core::fmt;
 
-use alloc::{format, string::String, vec::Vec};
+use alloc::{
+    format,
+    string::{String, ToString},
+    vec::Vec,
+};
 
 use super::{ContentType, HttpVersion};
 
+/// HTTP request method
+///
+/// Defaults to [`Method::Get`]
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum Method {
     #[default]
@@ -24,6 +31,14 @@ impl fmt::Display for Method {
     }
 }
 
+/// HTTP request
+///
+/// # Fields
+/// - [`method`]: HTTP request method
+/// - [`http_version`]: HTTP version
+/// - [`path`]: HTTP path
+/// - [`headers`]: HTTP headers
+/// - [`body`]: HTTP body
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Request {
     pub method: Method,
@@ -55,5 +70,15 @@ impl fmt::Display for Request {
             "{} {} {}\n{}",
             self.method, self.path, self.http_version, headers_and_body
         )
+    }
+}
+
+impl Request {
+    /// Render the request as a vector of bytes
+    ///
+    /// # Returns
+    /// A vector of bytes, representing the request
+    pub fn render(&self) -> Vec<u8> {
+        self.to_string().into_bytes()
     }
 }
