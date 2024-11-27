@@ -1,9 +1,11 @@
 /// Macro helping craft HTTP requests
 ///
+/// By default, the HTTP version is set to 1.1.
+///
 /// # Parameters
 ///
-/// # Example
-/// Example GET request
+/// # Examples
+/// ## Example GET request
 /// ```no_run
 /// request! {
 ///     "www.example.com" get "/",
@@ -11,14 +13,19 @@
 /// }
 /// ```
 ///
-/// Example POST request
+/// ## Example POST request
 /// ```no_run
 /// request! {
 ///     "www.example.com" post "/users/create" ContentType::ApplicationJson,
 ///     body body,
 /// ```
 ///
-/// Exa
+/// ## Example With HTTP 1.0
+/// ```no_run
+/// request! {
+///     "www.example.com" get "/"; HttpVersion::V1,
+/// }
+/// ```
 #[macro_export]
 macro_rules! request {
     (
