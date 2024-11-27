@@ -2,8 +2,6 @@
 ///
 /// By default, the HTTP version is set to 1.1.
 ///
-/// # Parameters
-///
 /// # Examples
 /// ## Example GET request
 /// ```no_run
@@ -24,6 +22,16 @@
 /// ```no_run
 /// request! {
 ///     "www.example.com" get "/"; HttpVersion::V1,
+/// }
+/// ```
+///
+/// ## Example With Formatted Header
+/// ```no_run
+/// request! {
+///     "www.example.com" get "/"; HttpVersion::V1,
+///     /// enclose the header value in parentheses if it is not
+///     /// a string, or more specifically a single token tree (tt).
+///     "User-Agent" => (format!("Mozilla/5.0 ({})", "test")),
 /// }
 /// ```
 #[macro_export]
