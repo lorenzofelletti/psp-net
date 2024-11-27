@@ -1,5 +1,7 @@
 /// Macro helping craft HTTP requests
 ///
+/// # Parameters
+///
 /// # Example
 /// Example GET request
 /// ```no_run
@@ -15,10 +17,12 @@
 ///     "www.example.com" post "/users/create" ContentType::ApplicationJson,
 ///     body body,
 /// ```
+///
+/// Exa
 #[macro_export]
 macro_rules! request {
     (
-        $host:tt get $uri:tt $(; $http_version:expr)?,
+        $host:tt get $path:tt $(; $http_version:expr)?,
         $($header:expr => $value:expr,)*
     ) => {
         {
@@ -27,7 +31,7 @@ macro_rules! request {
             use alloc::vec as a_vec;
             $crate::http::Request {
                 method: $crate::http::Method::Get,
-                uri: $uri.to_string(),
+                path: $path.to_string(),
                 headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
                 content_type: None,
                 body: Vec::new(),
@@ -37,7 +41,7 @@ macro_rules! request {
     };
 
     (
-        $host:tt post $uri:tt $($content_type:expr)? $(; $http_version:expr)?,
+        $host:tt post $path:tt $($content_type:expr)? $(; $http_version:expr)?,
         $($header:tt => $value:tt),*
         $(body $body:expr)?
     ) => {
@@ -47,7 +51,7 @@ macro_rules! request {
             use alloc::vec as a_vec;
             $crate::http::Request {
                 method: $crate::http::Method::Post,
-                uri: $uri.to_string(),
+                path: $path.to_string(),
                 headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
                 content_type: $crate::some_or_none!($($content_type)?),
                 body: $crate::some_or_none!($($body)?).unwrap_or(Vec::new()),
@@ -57,7 +61,7 @@ macro_rules! request {
     };
 
     (
-        $host:tt put $uri:tt $($content_type:expr)? $(; $http_version:expr)?,
+        $host:tt put $path:tt $($content_type:expr)? $(; $http_version:expr)?,
         $($header:tt => $value:tt),*
         $(body $body:expr)?
     ) => {
@@ -67,7 +71,7 @@ macro_rules! request {
             use alloc::vec as a_vec;
             $crate::http::Request {
                 method: $crate::http::Method::Put,
-                uri: $uri.to_string(),
+                path: $path.to_string(),
                 headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
                 content_type: $crate::some_or_none!($($content_type)?),
                 body: $crate::some_or_none!($($body)?).unwrap_or(Vec::new()),
@@ -77,7 +81,7 @@ macro_rules! request {
     };
 
     (
-        $host:tt delete $uri:tt $($content_type:expr)? $(; $http_version:expr)?,
+        $host:tt delete $path:tt $($content_type:expr)? $(; $http_version:expr)?,
         $($header:tt => $value:tt),*
         $(body $body:expr)?
     ) => {
@@ -87,7 +91,7 @@ macro_rules! request {
             use alloc::vec as a_vec;
             $crate::http::Request {
                 method: $crate::http::Method::Delete,
-                uri: $uri.to_string(),
+                path: $path.to_string(),
                 headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
                 content_type: $crate::some_or_none!($($content_type)?),
                 body: $crate::some_or_none!($($body)?).unwrap_or(Vec::new()),

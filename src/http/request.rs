@@ -28,7 +28,7 @@ impl fmt::Display for Method {
 pub struct Request {
     pub method: Method,
     pub http_version: HttpVersion,
-    pub uri: String,
+    pub path: String,
     pub headers: Vec<(String, String)>,
     pub body: Vec<u8>,
     pub content_type: Option<ContentType>,
@@ -53,7 +53,7 @@ impl fmt::Display for Request {
         write!(
             f,
             "{} {} {}\n{}",
-            self.method, self.uri, self.http_version, headers_and_body
+            self.method, self.path, self.http_version, headers_and_body
         )
     }
 }
