@@ -57,6 +57,7 @@ macro_rules! request {
 
     (
         $host:tt post $path:tt $($content_type:expr)? $(; $http_version:expr)?,
+        $(authorization $auth:expr,)?
         $($header:tt => $value:tt),*
         $(body $body:expr)?
     ) => {
@@ -114,4 +115,26 @@ macro_rules! request {
             }
         }
     };
+}
+
+macro_rules! new_response {
+    () => {};
+}
+
+#[macro_export]
+macro_rules! parse_response {
+    (
+        $response:expr,
+        $(max_headers $max_headers:tt,)?
+    ) => {{
+        use alloc::vec;
+        let me = $crate::some_or_none!($($max_headers)?).unwrap_or(16);
+        let mut headers = vec![httparse::EMPTY_HEADER; me];
+
+        let mut res = httparse::Response::new(&mut headers);
+
+        let parsed =
+            httparse::ParserConfig::default().parse_response(&mut res, $response.as_bytes());
+        parsed
+    }};
 }

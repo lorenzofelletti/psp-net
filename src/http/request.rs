@@ -8,15 +8,51 @@ use alloc::{
 
 use super::{ContentType, HttpVersion};
 
+/// HTTP basic authorization type
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BasicAuthorization {
+    /// Provide ID and password
+    IdPassword(String, String),
+    /// Provide the already encoded string "ID:Password"
+    Encoded(String),
+}
+
+/// HTTP authorization type
+///
+/// Defaults to [`Authorization::Basic`]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub enum Authorization {
+    #[default]
+    /// No authorization
+    None,
+    /// Basic authorization
+    ///
+    /// # Fields
+    /// - first: ID
+    /// - second: Password
+    Basic(BasicAuthorization),
+    /// Bearer authorization
+    ///
+    /// # Fields
+    /// - first: Bearer token
+    Bearer(String),
+    /// Any other authorization, as a string
+    Other(String),
+}
+
 /// HTTP request method
 ///
 /// Defaults to [`Method::Get`]
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum Method {
+    /// GET
     #[default]
     Get,
+    /// POST
     Post,
+    /// PUT
     Put,
+    /// DELETE
     Delete,
 }
 
@@ -43,6 +79,7 @@ impl fmt::Display for Method {
 pub struct Request {
     pub method: Method,
     pub http_version: HttpVersion,
+    pub authorization: Authorization,
     pub path: String,
     pub headers: Vec<(String, String)>,
     pub body: Vec<u8>,
@@ -52,6 +89,8 @@ pub struct Request {
 impl fmt::Display for Request {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut headers_and_body = String::new();
+
+        if !matches!(self.authorization, Authorization::None) {}
 
         for (header, value) in &self.headers {
             headers_and_body.push_str(format!("{header}: {value}\n").as_str());

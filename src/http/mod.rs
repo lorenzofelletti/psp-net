@@ -7,14 +7,16 @@ use alloc::string::String;
 #[cfg(feature = "macros")]
 pub mod macros;
 mod request;
+mod response;
 
 /// Enum for different supported HTTP versions
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum HttpVersion {
+    /// HTTP/1
     V1,
+    /// HTTP/1.1
     #[default]
     V1_1,
-    V2,
 }
 
 impl fmt::Display for HttpVersion {
@@ -22,7 +24,6 @@ impl fmt::Display for HttpVersion {
         match self {
             HttpVersion::V1 => write!(f, "HTTP/1"),
             HttpVersion::V1_1 => write!(f, "HTTP/1.1"),
-            HttpVersion::V2 => write!(f, "HTTP/2"),
         }
     }
 }
@@ -31,9 +32,13 @@ impl fmt::Display for HttpVersion {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum ContentType {
     #[default]
+    /// text/plain
     TextPlain,
+    /// application/json
     ApplicationJson,
+    /// application/octet-stream
     OctetStream,
+    /// Any other content type, as a string
     Other(String),
 }
 
@@ -51,3 +56,5 @@ impl fmt::Display for ContentType {
 // re-exports
 pub type Method = request::Method;
 pub type Request = request::Request;
+
+pub type Response<'a, 'b> = httparse::Response<'a, 'b>;
