@@ -22,7 +22,7 @@ embedded-tls = { version = "0.17.0", default-features = false }
 embedded-io = { version = "0.6.1", default-features = false }
 rand = { version = "0.8.5", default-features = false }
 rand_chacha = { version = "0.3.1", default-features = false }
-regex = { version = "1.10", default-features = false }
+regex = { version = "1.11", default-features = false }
 lazy_static = { version = "1.5.0", default-features = false, features = [
     "spin_no_std",
 ] }
