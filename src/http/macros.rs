@@ -45,11 +45,12 @@ macro_rules! request {
             use alloc::string::ToString;
             use alloc::vec::Vec;
             use alloc::vec as a_vec;
+            let auth = some_or_none!($($auth)?).unwrap_or($crate::http::Authorization::None);
             $crate::http::Request {
                 method: $crate::http::Method::Get,
                 path: $path.to_string(),
                 headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
-                authorization: $crate::some_or_none!($($auth)?),
+                authorization: auth,
                 content_type: None,
                 body: Vec::new(),
                 http_version: $crate::some_or_none!($($http_version)?).unwrap_or($crate::http::HttpVersion::V1_1),
@@ -67,11 +68,12 @@ macro_rules! request {
             use alloc::string::ToString;
             use alloc::vec::Vec;
             use alloc::vec as a_vec;
+            let auth = some_or_none!($($auth)?).unwrap_or($crate::http::Authorization::None);
             $crate::http::Request {
                 method: $crate::http::Method::Post,
                 path: $path.to_string(),
                 headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
-                authorization: $crate::some_or_none!($($auth)?),
+                authorization: auth,
                 content_type: $crate::some_or_none!($($content_type)?),
                 body: $crate::some_or_none!($($body)?).unwrap_or(Vec::new()),
                 http_version: $crate::some_or_none!($($http_version)?).unwrap_or($crate::http::HttpVersion::V1_1),
@@ -89,11 +91,12 @@ macro_rules! request {
             use alloc::string::ToString;
             use alloc::vec::Vec;
             use alloc::vec as a_vec;
+            let auth = some_or_none!($($auth)?).unwrap_or($crate::http::Authorization::None);
             $crate::http::Request {
                 method: $crate::http::Method::Put,
                 path: $path.to_string(),
                 headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
-                $(authorization $auth:expr,)?
+                authorization: auth,
                 content_type: $crate::some_or_none!($($content_type)?),
                 body: $crate::some_or_none!($($body)?).unwrap_or(Vec::new()),
                 http_version: $crate::some_or_none!($($http_version)?).unwrap_or($crate::http::HttpVersion::V1_1),
@@ -111,11 +114,12 @@ macro_rules! request {
             use alloc::string::ToString;
             use alloc::vec::Vec;
             use alloc::vec as a_vec;
+            let auth = some_or_none!($($auth)?).unwrap_or($crate::http::Authorization::None);
             $crate::http::Request {
                 method: $crate::http::Method::Delete,
                 path: $path.to_string(),
                 headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
-                authorization: $crate::some_or_none!($($auth)?),
+                authorization: auth,
                 content_type: $crate::some_or_none!($($content_type)?),
                 body: $crate::some_or_none!($($body)?).unwrap_or(Vec::new()),
                 http_version: $crate::some_or_none!($($http_version)?).unwrap_or($crate::http::HttpVersion::V1_1),
