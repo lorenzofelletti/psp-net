@@ -21,6 +21,8 @@ macro_rules! timestamp {
 /// # Parameters
 /// - `name`: The name of the variable where the socket will be stored
 /// - `host`: The hostname and address to connect to
+/// - `send_flags`: (Optional) The send flags to be used (by the underlying TCP socket)
+/// - `recv_flags`: (Optional) The receive flags to be used (by the underlying TCP socket)
 /// - `seed`: (Optional) The seed to use for the RNG, if not provided, the current timestamp is used
 /// - `cert`: (Optional) The certificate to use
 /// - `ca`: (Optional) The CA to use
@@ -51,6 +53,7 @@ macro_rules! tls_socket {
         enable_rsa_signatures $enable_rsa_signatures:expr,
         reset_max_fragment_length $mfl:expr,
     ) => {
+        use alloc::format;
         use core::net::Ipv4Addr;
         use core::str::FromStr;
         use $crate::socket::state::Ready;
@@ -60,7 +63,7 @@ macro_rules! tls_socket {
         use $crate::traits::io::Open;
         use $crate::socket::{error::SocketError, SocketAddr, SocketAddrV4};
 
-        let mut $name: Result<TlsSocket<Ready>, SocketError> = Err(SocketError::Other);
+        let mut $name: Result<TlsSocket<Ready>, SocketError> = Err(SocketError::Unknown);
 
         let ip = Ipv4Addr::from_str($remote).unwrap();
         let addr = SocketAddr::V4(SocketAddrV4::new(ip, 443));
@@ -85,10 +88,12 @@ macro_rules! tls_socket {
                 options.set_reset_max_fragment_length($mfl);
                 let $name = $name.open(&options);
             } else {
-                $name = Err(s.err().unwrap());
+                $name = Err(SocketError::Other(
+                    format!("Failed to connect to {}: {}", $host, s.err().unwrap())));
             }
         } else {
-            $name = Err(s.err().unwrap());
+            $name = Err(SocketError::Other(
+                format!("Failed to create socket: {}", s.err().unwrap())));
         }
     };
     (

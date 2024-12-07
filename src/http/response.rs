@@ -4,8 +4,6 @@ use alloc::{
     vec::Vec,
 };
 
-use crate::parse_response;
-
 use super::HttpVersion;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
