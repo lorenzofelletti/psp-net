@@ -45,6 +45,7 @@ macro_rules! request {
             use alloc::string::ToString;
             use alloc::vec::Vec;
             use alloc::vec as a_vec;
+            use psp_net::some_or_none;
             let auth = some_or_none!($($auth)?).unwrap_or($crate::http::types::Authorization::None);
             $crate::http::Request {
                 method: $crate::http::Method::Get,
@@ -68,6 +69,7 @@ macro_rules! request {
             use alloc::string::ToString;
             use alloc::vec::Vec;
             use alloc::vec as a_vec;
+            use psp_net::some_or_none;
             let auth = some_or_none!($($auth)?).unwrap_or($crate::http::types::Authorization::None);
             $crate::http::Request {
                 method: $crate::http::Method::Post,
@@ -91,6 +93,7 @@ macro_rules! request {
             use alloc::string::ToString;
             use alloc::vec::Vec;
             use alloc::vec as a_vec;
+            use psp_net::some_or_none;
             let auth = some_or_none!($($auth)?).unwrap_or($crate::http::types::Authorization::None);
             $crate::http::Request {
                 method: $crate::http::Method::Put,
@@ -114,6 +117,7 @@ macro_rules! request {
             use alloc::string::ToString;
             use alloc::vec::Vec;
             use alloc::vec as a_vec;
+            use psp_net::some_or_none;
             let auth = some_or_none!($($auth)?).unwrap_or($crate::http::types::Authorization::None);
             $crate::http::Request {
                 method: $crate::http::Method::Delete,
