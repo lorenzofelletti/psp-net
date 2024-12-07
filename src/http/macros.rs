@@ -38,6 +38,7 @@
 macro_rules! request {
     (
         $host:tt get $path:tt $(; $http_version:expr)?,
+        $(authorization $auth:expr,)?
         $($header:expr => $value:expr,)*
     ) => {
         {
@@ -48,6 +49,7 @@ macro_rules! request {
                 method: $crate::http::Method::Get,
                 path: $path.to_string(),
                 headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
+                authorization: $crate::some_or_none!($($auth)?),
                 content_type: None,
                 body: Vec::new(),
                 http_version: $crate::some_or_none!($($http_version)?).unwrap_or($crate::http::HttpVersion::V1_1),
@@ -69,6 +71,7 @@ macro_rules! request {
                 method: $crate::http::Method::Post,
                 path: $path.to_string(),
                 headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
+                authorization: $crate::some_or_none!($($auth)?),
                 content_type: $crate::some_or_none!($($content_type)?),
                 body: $crate::some_or_none!($($body)?).unwrap_or(Vec::new()),
                 http_version: $crate::some_or_none!($($http_version)?).unwrap_or($crate::http::HttpVersion::V1_1),
@@ -78,6 +81,7 @@ macro_rules! request {
 
     (
         $host:tt put $path:tt $($content_type:expr)? $(; $http_version:expr)?,
+        $(authorization $auth:expr,)?
         $($header:tt => $value:tt),*
         $(body $body:expr)?
     ) => {
@@ -89,6 +93,7 @@ macro_rules! request {
                 method: $crate::http::Method::Put,
                 path: $path.to_string(),
                 headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
+                $(authorization $auth:expr,)?
                 content_type: $crate::some_or_none!($($content_type)?),
                 body: $crate::some_or_none!($($body)?).unwrap_or(Vec::new()),
                 http_version: $crate::some_or_none!($($http_version)?).unwrap_or($crate::http::HttpVersion::V1_1),
@@ -98,6 +103,7 @@ macro_rules! request {
 
     (
         $host:tt delete $path:tt $($content_type:expr)? $(; $http_version:expr)?,
+        $(authorization $auth:expr,)?
         $($header:tt => $value:tt),*
         $(body $body:expr)?
     ) => {
@@ -109,6 +115,7 @@ macro_rules! request {
                 method: $crate::http::Method::Delete,
                 path: $path.to_string(),
                 headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
+                authorization: $crate::some_or_none!($($auth)?),
                 content_type: $crate::some_or_none!($($content_type)?),
                 body: $crate::some_or_none!($($body)?).unwrap_or(Vec::new()),
                 http_version: $crate::some_or_none!($($http_version)?).unwrap_or($crate::http::HttpVersion::V1_1),
