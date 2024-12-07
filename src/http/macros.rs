@@ -45,7 +45,7 @@ macro_rules! request {
             use alloc::string::ToString;
             use alloc::vec::Vec;
             use alloc::vec as a_vec;
-            let auth = some_or_none!($($auth)?).unwrap_or($crate::http::Authorization::None);
+            let auth = some_or_none!($($auth)?).unwrap_or($crate::http::request::Authorization::None);
             $crate::http::Request {
                 method: $crate::http::Method::Get,
                 path: $path.to_string(),
@@ -68,7 +68,7 @@ macro_rules! request {
             use alloc::string::ToString;
             use alloc::vec::Vec;
             use alloc::vec as a_vec;
-            let auth = some_or_none!($($auth)?).unwrap_or($crate::http::Authorization::None);
+            let auth = some_or_none!($($auth)?).unwrap_or($crate::http::request::Authorization::None);
             $crate::http::Request {
                 method: $crate::http::Method::Post,
                 path: $path.to_string(),
@@ -91,7 +91,7 @@ macro_rules! request {
             use alloc::string::ToString;
             use alloc::vec::Vec;
             use alloc::vec as a_vec;
-            let auth = some_or_none!($($auth)?).unwrap_or($crate::http::Authorization::None);
+            let auth = some_or_none!($($auth)?).unwrap_or($crate::http::request::Authorization::None);
             $crate::http::Request {
                 method: $crate::http::Method::Put,
                 path: $path.to_string(),
@@ -114,7 +114,7 @@ macro_rules! request {
             use alloc::string::ToString;
             use alloc::vec::Vec;
             use alloc::vec as a_vec;
-            let auth = some_or_none!($($auth)?).unwrap_or($crate::http::Authorization::None);
+            let auth = some_or_none!($($auth)?).unwrap_or($crate::http::request::Authorization::None);
             $crate::http::Request {
                 method: $crate::http::Method::Delete,
                 path: $path.to_string(),
