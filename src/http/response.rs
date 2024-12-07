@@ -1,10 +1,14 @@
-use alloc::{string::String, vec::Vec};
-use bitflags::bitflags;
+use alloc::{
+    borrow::ToOwned,
+    string::{String, ToString},
+    vec::Vec,
+};
 
 use crate::parse_response;
 
 use super::HttpVersion;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Response {
     pub http_version: HttpVersion,
     pub status: Code,
@@ -12,33 +16,7 @@ pub struct Response {
     pub body: Vec<u8>,
 }
 
-bitflags! {
-    pub struct XCodes: u16 {
-        const Ok = 200;
-        const Created = 201;
-        const Accepted = 202;
-        const NonAuthoritativeInformation = 203;
-        const NoContent = 204;
-        const ResetContent = 205;
-        const PartialContent = 206;
-        const MultipleChoices = 300;
-        const MovedPermanently = 301;
-        const Found = 302;
-        const SeeOther = 303;
-        const NotModified = 304;
-        const UseProxy = 305;
-        const TemporaryRedirect = 307;
-        const PermanentRedirect = 308;
-        const BadRequest = 400;
-        const Unauthorized = 401;
-        const PaymentRequired = 402;
-        const Forbidden = 403;
-        const NotFound = 404;
-        const MethodNotAllowed = 405;
-        const InternalServerError = 500;
-    }
-}
-
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u16)]
 pub enum Code {
     Ok = 200,
@@ -64,6 +42,16 @@ pub enum Code {
     MethodNotAllowed = 405,
     InternalServerError = 500,
     Other(u16),
+    Unparsable,
+}
+
+impl From<Option<u16>> for Code {
+    fn from(value: Option<u16>) -> Self {
+        match value {
+            Some(x) => x.into(),
+            None => Code::Unparsable,
+        }
+    }
 }
 
 impl From<Code> for u16 {
@@ -106,7 +94,7 @@ impl From<u16> for Code {
 }
 
 fn parse_responsex(response: String) {
-    let resx = response.clone();
+    // let resx = response.clone();
     let mut headers = [httparse::EMPTY_HEADER; 16];
     let mut res = httparse::Response::new(&mut headers);
 
@@ -120,14 +108,36 @@ fn parse_responsex(response: String) {
         res.code;
     }
 
-    let x = parse_response! {
-        resx,
-        max_headers 16,
-    };
-    if let Ok(x) = x {
-        if x.is_complete() {
-            res.code;
-            if let Code::Ok = Code::from(res.code.unwrap()) {}
-        }
+    if r.is_complete() {
+        let mut body = Vec::with_capacity(16000);
+        res.parse(&body);
+        // if let Code::Ok = res.code.unwrap().into() {}
+
+        let resp = Response {
+            http_version: HttpVersion::V1_1,
+            status: res.code.into(),
+            headers: res
+                .headers
+                .iter()
+                .map(|x| {
+                    let val: String = String::from_utf8_lossy(x.value).to_string();
+                    (x.name.into(), val)
+                })
+                .collect::<_>(),
+            body: "todo!()".into(),
+        };
+
+        resp.body;
     }
+
+    // let x = parse_response! {
+    //     response,
+    //     max_headers 16,
+    // };
+    // if let Ok(x) = x {
+    //     if x.is_complete() {
+    //         res.code;
+    //         if let Code::Ok = res.code.into() {}
+    //     }
+    // }
 }
