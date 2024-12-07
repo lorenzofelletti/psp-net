@@ -1,8 +1,4 @@
-use alloc::{
-    borrow::ToOwned,
-    string::{String, ToString},
-    vec::Vec,
-};
+use alloc::{string::String, vec::Vec};
 
 use super::HttpVersion;
 
@@ -89,53 +85,4 @@ impl From<u16> for Code {
             x => Code::Other(x),
         }
     }
-}
-
-fn parse_responsex(response: String) {
-    // let resx = response.clone();
-    let mut headers = [httparse::EMPTY_HEADER; 16];
-    let mut res = httparse::Response::new(&mut headers);
-
-    let r = httparse::ParserConfig::default()
-        .allow_multiple_spaces_in_response_status_delimiters(true)
-        .parse_response(&mut res, response.as_bytes())
-        .unwrap();
-    if r.is_partial() {
-        panic!("Partial response");
-    } else {
-        res.code;
-    }
-
-    if r.is_complete() {
-        let mut body = Vec::with_capacity(16000);
-        res.parse(&body);
-        // if let Code::Ok = res.code.unwrap().into() {}
-
-        let resp = Response {
-            http_version: HttpVersion::V1_1,
-            status: res.code.into(),
-            headers: res
-                .headers
-                .iter()
-                .map(|x| {
-                    let val: String = String::from_utf8_lossy(x.value).to_string();
-                    (x.name.into(), val)
-                })
-                .collect::<_>(),
-            body: "todo!()".into(),
-        };
-
-        resp.body;
-    }
-
-    // let x = parse_response! {
-    //     response,
-    //     max_headers 16,
-    // };
-    // if let Ok(x) = x {
-    //     if x.is_complete() {
-    //         res.code;
-    //         if let Code::Ok = res.code.into() {}
-    //     }
-    // }
 }
