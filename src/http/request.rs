@@ -6,39 +6,10 @@ use alloc::{
     vec::Vec,
 };
 
-use super::{ContentType, HttpVersion};
-
-/// HTTP basic authorization type
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum BasicAuthorization {
-    /// Provide ID and password
-    IdPassword(String, String),
-    /// Provide the already encoded string "ID:Password"
-    Encoded(String),
-}
-
-/// HTTP authorization type
-///
-/// Defaults to [`Authorization::Basic`]
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
-pub enum Authorization {
-    #[default]
-    /// No authorization
-    None,
-    /// Basic authorization
-    ///
-    /// # Fields
-    /// - first: ID
-    /// - second: Password
-    Basic(BasicAuthorization),
-    /// Bearer authorization
-    ///
-    /// # Fields
-    /// - first: Bearer token
-    Bearer(String),
-    /// Any other authorization, as a string
-    Other(String),
-}
+use super::{
+    types::{Authorization, ContentType},
+    HttpVersion,
+};
 
 /// HTTP request method
 ///
