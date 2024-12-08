@@ -5,6 +5,7 @@
 /// # Examples
 /// ## Example GET request
 /// ```no_run
+/// use psp_net::request;
 /// request! {
 ///     "www.example.com" get "/",
 ///     "User-Agent" => "Mozilla/5.0",
@@ -13,6 +14,7 @@
 ///
 /// ## Example POST request
 /// ```no_run
+/// use psp_net::request;
 /// request! {
 ///     "www.example.com" post "/users/create" ContentType::ApplicationJson,
 ///     body body,
@@ -20,19 +22,22 @@
 ///
 /// ## Example With HTTP 1.0
 /// ```no_run
+/// use psp_net::request;
+/// use psp_net::http::HttpVersion;
 /// request! {
 ///     "www.example.com" get "/"; HttpVersion::V1,
-/// }
+/// };
 /// ```
 ///
 /// ## Example With Formatted Header
 /// ```no_run
+/// use psp_net::request;
 /// request! {
 ///     "www.example.com" get "/"; HttpVersion::V1,
 ///     /// enclose the header value in parentheses if it is not
 ///     /// a string, or more specifically a single token tree (tt).
 ///     "User-Agent" => (format!("Mozilla/5.0 ({})", "test")),
-/// }
+/// };
 /// ```
 #[macro_export]
 macro_rules! request {
@@ -42,7 +47,7 @@ macro_rules! request {
         $($header:expr => $value:expr,)*
     ) => {
         {
-            use alloc::string::ToString;
+            use alloc::{String, string::ToString};
             use alloc::vec::Vec;
             use alloc::vec as a_vec;
             use psp_net::some_or_none;
