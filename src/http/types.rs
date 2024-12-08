@@ -1,4 +1,4 @@
-use alloc::{format, string::String};
+use alloc::{borrow::ToOwned, format, string::String};
 use base64::Engine;
 use core::fmt;
 
@@ -10,6 +10,38 @@ pub enum BasicAuthorization {
     IdPassword(String, String),
     /// Provide the already encoded string "ID:Password"
     Encoded(String),
+}
+
+impl BasicAuthorization {
+    fn new(id: &str, password: &str) -> Self {
+        BasicAuthorization::IdPassword(id.to_owned(), password.to_owned())
+    }
+    fn new_encoded(encoded: &str) -> Self {
+        BasicAuthorization::Encoded(encoded.to_owned())
+    }
+}
+
+impl From<(&str, &str)> for BasicAuthorization {
+    fn from((id, password): (&str, &str)) -> Self {
+        BasicAuthorization::new(id, password)
+    }
+}
+impl From<&str> for BasicAuthorization {
+    fn from(encoded: &str) -> Self {
+        BasicAuthorization::new_encoded(encoded)
+    }
+}
+
+impl From<String> for BasicAuthorization {
+    fn from(encoded: String) -> Self {
+        BasicAuthorization::new_encoded(&encoded)
+    }
+}
+
+impl From<(String, String)> for BasicAuthorization {
+    fn from((id, password): (String, String)) -> Self {
+        BasicAuthorization::new(&id, &password)
+    }
 }
 
 impl fmt::Display for BasicAuthorization {
@@ -112,5 +144,8 @@ mod tests {
 
     authorization_tests! {
         none: (Authorization::None, String::new()),
+        basic: (Authorization::Basic(BasicAuthorization::new("user", "password")), "Basic dXNlcjpwYXNzd29yZA==".to_string()),
+        bearer: (Authorization::Bearer("token".to_string()), "Bearer token".to_string()),
+        other: (Authorization::Other("other".to_string()), "other".to_string()),
     }
 }
