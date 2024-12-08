@@ -10,7 +10,7 @@
 /// # use alloc::string::String;
 /// let req = request! {
 ///     "www.example.com" get "/",
-///     "User-Agent" => "Mozilla/5.0"
+///     "User-Agent" => "Mozilla/5.0",
 /// };
 /// ```
 ///
@@ -67,7 +67,7 @@ macro_rules! request {
                 path $path,
                 method $crate::http::Method::Get,
                 auth $crate::http::types::Authorization::None,
-                $($header => $value),*
+                $($header => $value,)*
             }
         }
     };
@@ -194,15 +194,15 @@ macro_rules! _request {
         http_version $http_version:expr,
         host $host:tt,
         path $path:tt,
-        method $method:tt,
+        method $method:expr,
         auth $auth:expr,
-        $(header $header:tt => $value:tt),*
+        $($header:expr => $value:expr,)*
     ) => {
         $crate::http::Request {
             method: $crate::http::Method::Get,
             path: $path.to_string(),
             headers: a_vec![("Host".to_string(), $host.to_string()), $(($header.to_string(), $value.to_string()),)*],
-            authorization: auth,
+            authorization: $auth,
             content_type: None,
             body: Vec::new(),
             http_version: $http_version,
@@ -213,10 +213,10 @@ macro_rules! _request {
         http_version $http_version:expr,
         host $host:tt,
         path $path:tt,
-        method $method:tt,
+        method $method:expr,
         auth $auth:expr,
-        $(header $header:tt => $value:tt),*
-        body $body:expr
+        body $body:expr,
+        $($header:expr => $value:expr,)*
     ) => {
         $crate::http::Request {
             method: $method,
@@ -233,11 +233,11 @@ macro_rules! _request {
         http_version $http_version:expr,
         host $host:tt,
         path $path:tt,
-        method $method:tt,
+        method $method:expr,
         auth $auth:expr,
         content_type $content_type:expr,
         body $body:expr,
-        $(header $header:tt => $value:tt),*
+        $($header:expr => $value:expr,)*
     ) => {
         $crate::http::Request {
             method: $method,
