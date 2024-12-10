@@ -1,0 +1,31 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+env:
+  CARGO_TERM_COLOR: always
+  TOOLCHAIN_VERSION: nightly-2024-12-09
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ env.TOOLCHAIN_VERSION }}
+          override: true
+      
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=http,macros

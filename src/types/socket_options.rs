@@ -92,8 +92,8 @@ impl<'a> TlsSocketOptions<'a> {
     ///
     /// # Arguments
     /// - `cert`: The certificate
-    pub fn set_cert(&mut self, cert: Certificate<'a>) {
-        self.cert = Some(cert);
+    pub fn set_cert(&mut self, cert: Option<Certificate<'a>>) {
+        self.cert = cert;
     }
 
     /// Get the seed
@@ -145,5 +145,13 @@ impl<'a> TlsSocketOptions<'a> {
     /// - `ca`: The CA
     pub fn set_ca(&mut self, ca: Option<Certificate<'a>>) {
         self.ca = ca;
+    }
+
+    /// Set whether RSA signatures should be enabled
+    ///
+    /// # Arguments
+    /// - `enable_rsa_signatures`: Whether RSA signatures should be enabled
+    pub fn set_enable_rsa_signatures(&mut self, enable_rsa_signatures: bool) {
+        self.enable_rsa_signatures = enable_rsa_signatures;
     }
 }

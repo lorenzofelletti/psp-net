@@ -1,6 +1,6 @@
 #![allow(clippy::module_name_repetitions)]
 
-use alloc::vec::Vec;
+use alloc::{borrow::ToOwned, vec::Vec};
 use core::net::{IpAddr, Ipv4Addr, SocketAddr};
 use embedded_io::{ErrorType, Read, Write};
 use psp::sys::{self, sockaddr, socklen_t};
@@ -228,7 +228,9 @@ impl UdpSocket<Bound> {
         mut self,
         buf: &mut [u8],
     ) -> Result<(usize, UdpSocket<Connected>), SocketError> {
-        let mut sockaddr = self.remote.ok_or(SocketError::Other)?;
+        let mut sockaddr = self
+            .remote
+            .ok_or(SocketError::Other("Remote not set".to_owned()))?;
         let result = unsafe {
             sys::sceNetInetRecvfrom(
                 *self.fd,

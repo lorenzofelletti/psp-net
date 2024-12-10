@@ -6,12 +6,14 @@
 
 #![allow(clippy::module_name_repetitions)]
 
-use core::net::{Ipv4Addr, SocketAddrV4};
+use core::net::Ipv4Addr;
 use psp::sys::{in_addr, sockaddr};
 
 use super::netc;
 
 pub mod error;
+#[cfg(feature = "macros")]
+pub mod macros;
 mod sce;
 pub mod state;
 pub mod tcp;
@@ -79,3 +81,4 @@ impl ToSocketAddr for sockaddr {
 
 // re-exports
 pub type SocketAddr = core::net::SocketAddr;
+pub type SocketAddrV4 = core::net::SocketAddrV4;

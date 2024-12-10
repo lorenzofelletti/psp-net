@@ -1,15 +1,19 @@
 use core::fmt::Display;
 
+use alloc::string::String;
+
 /// An error that can occur with a socket
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum SocketError {
     /// Unsupported address family
     UnsupportedAddressFamily,
     /// Socket error with errno
     Errno(i32),
     /// Other error
+    Other(String),
+    /// Unknown error
     #[default]
-    Other,
+    Unknown,
 }
 
 impl Display for SocketError {

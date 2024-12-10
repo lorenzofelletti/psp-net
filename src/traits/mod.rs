@@ -3,6 +3,7 @@
 use alloc::vec::Vec;
 use core::fmt::Debug;
 
+#[cfg(feature = "psp")]
 pub mod dns;
 pub mod io;
 

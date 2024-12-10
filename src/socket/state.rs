@@ -1,3 +1,10 @@
+//! Socket states
+//!
+//! psp-net sockets implement the Type State Pattern, and here are defined
+//! the different possible states of this crate's sockets.
+//!
+//! Note that not all sockets may implement all of these states.
+
 use core::fmt::Debug;
 
 /// Trait describing the state of a socket
