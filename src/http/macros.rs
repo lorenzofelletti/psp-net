@@ -17,9 +17,9 @@
 /// ## Example POST request
 /// ```
 /// # extern crate alloc;
-/// # use psp_net::request;
+/// # use psp_net::{request, http::types::ContentType};
 /// # use alloc::string::String;
-/// # let body = "test".to_string();
+/// # let body = "test".as_bytes().to_vec();
 /// let req = request! {
 ///     "www.example.com" post "/users/create" ContentType::ApplicationJson,
 ///     body body,
@@ -58,10 +58,6 @@ macro_rules! request {
         $($header:expr => $value:expr;)*
     ) => {
         {
-            use alloc::string::ToString;
-            use alloc::vec::Vec;
-            use alloc::vec as a_vec;
-
             let http_ver = $crate::some_or_none!($($http_version)?).unwrap_or($crate::http::HttpVersion::V1_1);
             $crate::_request! {
                 http_version http_ver,
@@ -82,10 +78,6 @@ macro_rules! request {
         $($header:expr => $value:expr;)*
     ) => {
         {
-            use alloc::string::ToString;
-            use alloc::vec::Vec;
-            use alloc::vec as a_vec;
-
             let http_ver = $crate::some_or_none!($($http_version)?).unwrap_or($crate::http::HttpVersion::V1_1);
             $crate::_request! {
                 http_version http_ver,
@@ -128,10 +120,6 @@ macro_rules! request {
         $($header:expr => $value:expr;)*
     ) => {
         {
-            use alloc::string::ToString;
-            use alloc::vec::Vec;
-            use alloc::vec as a_vec;
-            use psp_net::some_or_none;
             let http_ver = $crate::some_or_none!($($http_version)?).unwrap_or($crate::http::HttpVersion::V1_1);
             $crate::_request! {
                 http_version http_ver,
@@ -153,10 +141,6 @@ macro_rules! request {
         $(body $body:expr)?
     ) => {
         {
-            use alloc::string::ToString;
-            use alloc::vec::Vec;
-            use alloc::vec as a_vec;
-            use psp_net::some_or_none;
             let auth = some_or_none!($($auth)?).unwrap_or($crate::http::types::Authorization::None);
             let body = $crate::some_or_none!($($body)?).unwrap_or(Vec::new());
             let http_ver = $crate::some_or_none!($($http_version)?).unwrap_or($crate::http::HttpVersion::V1_1);
@@ -333,23 +317,23 @@ mod test {
         );
     }
 
+    #[test]
     fn test_post_request_no_authorization() {
-        let ct = ContentType::ApplicationJson;
-        let hv = HttpVersion::V1_1;
         let body = Vec::new();
         let req = request! {
-        "www.example.com" post "/test" ct; hv,
+        "www.example.com" post "/test",
         body body,
         "User-Agent" => "Mozilla/5.0";
         };
         assert_eq!(
             req.to_string(),
-            "POST /users/create HTTP/1.1\nHost: www.example.com\nUser-Agent: Mozilla/5.0\n\n"
+            "POST /test HTTP/1.1\nHost: www.example.com\nUser-Agent: Mozilla/5.0\n\n"
         );
     }
 
     /// Test the macro [`_request!`] that is used internally as a support to [`request!`]
     /// macro to create a [`Request`](crate::http::Request).
+    #[test]
     fn test_internal_request() {
         // no content-type
         let req = _request! {
