@@ -5,7 +5,7 @@ use core::fmt;
 /// HTTP basic authorization type
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BasicAuthorization {
-    /// Provide ID and password. Calling `to_string` will return the encoded string,
+    /// Provide ID and password. Calling [`to_string`](Self::to_string) will return the encoded string,
     /// or any other method relying on the `Display` trait
     IdPassword(String, String),
     /// Provide the already encoded string "ID:Password"
@@ -13,9 +13,20 @@ pub enum BasicAuthorization {
 }
 
 impl BasicAuthorization {
+    /// Create a new basic authorization using ID and password.
+    ///
+    /// In particular, it returns a [`BasicAuthorization::IdPassword`] variant
+    /// of the [`BasicAuthorization`] enum.
+    #[must_use]
     pub fn new(id: &str, password: &str) -> Self {
         BasicAuthorization::IdPassword(id.to_owned(), password.to_owned())
     }
+
+    /// Create a new basic authorization using the already encoded string
+    ///
+    /// In particular, it returns a [`BasicAuthorization::Encoded`] variant
+    /// of the [`BasicAuthorization`] enum.
+    #[must_use]
     pub fn new_encoded(encoded: &str) -> Self {
         BasicAuthorization::Encoded(encoded.to_owned())
     }
