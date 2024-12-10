@@ -61,7 +61,9 @@ impl fmt::Display for Request {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut headers_and_body = String::new();
 
-        if !matches!(self.authorization, Authorization::None) {}
+        if !matches!(self.authorization, Authorization::None) {
+            headers_and_body.push_str(format!("Authorization: {}\n", self.authorization).as_str());
+        }
 
         for (header, value) in &self.headers {
             headers_and_body.push_str(format!("{header}: {value}\n").as_str());
@@ -77,7 +79,7 @@ impl fmt::Display for Request {
 
         write!(
             f,
-            "{} {} {}\n{}",
+            "{} {} {}\n{}\n",
             self.method, self.path, self.http_version, headers_and_body
         )
     }

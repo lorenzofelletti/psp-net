@@ -13,10 +13,10 @@ pub enum BasicAuthorization {
 }
 
 impl BasicAuthorization {
-    fn new(id: &str, password: &str) -> Self {
+    pub fn new(id: &str, password: &str) -> Self {
         BasicAuthorization::IdPassword(id.to_owned(), password.to_owned())
     }
-    fn new_encoded(encoded: &str) -> Self {
+    pub fn new_encoded(encoded: &str) -> Self {
         BasicAuthorization::Encoded(encoded.to_owned())
     }
 }
