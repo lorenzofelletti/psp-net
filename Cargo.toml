@@ -1,6 +1,6 @@
 [package]
 name = "psp-net"
-version = "0.5.4"
+version = "0.6.1"
 edition = "2021"
 license-file = "LICENSE"
 keywords = ["psp", "net", "networking", "embedded", "gamedev"]
@@ -11,8 +11,7 @@ rust-version = "1.81"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-# TODO: revert to empty default
-default = ["http", "macros", "psp"]
+default = ["psp"]
 macros = []
 http = ["dep:httparse"]
 psp = ["dep:psp"]
