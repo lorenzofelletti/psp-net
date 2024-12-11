@@ -94,3 +94,15 @@ impl Request {
         self.to_string().into_bytes()
     }
 }
+
+impl From<Request> for Vec<u8> {
+    fn from(req: Request) -> Self {
+        req.render()
+    }
+}
+
+impl From<Request> for String {
+    fn from(req: Request) -> Self {
+        req.to_string()
+    }
+}

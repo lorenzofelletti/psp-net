@@ -126,11 +126,11 @@ macro_rules! request {
                 host $host,
                 path $path,
                 method $crate::http::Method::Post,
-                auth: $auth,
+                auth $auth,
                 content_type $crate::some_or_none!($($content_type)?),
                 body $body,
                 $($header => $value;)*
-            },
+            }
         }
     };
 
@@ -291,29 +291,40 @@ mod test {
         HttpVersion, Method,
     };
 
+    const HOST: &str = "www.example.com";
+    static ENCODED_AUTH: &str = "dXNlcjpwYXNzd29yZA==";
+    lazy_static::lazy_static! {
+        static ref BASIC_AUTH: Authorization = Authorization::Basic(BasicAuthorization::new_encoded(ENCODED_AUTH));
+    }
+    const MOZILLA_UA: (&str, &str) = ("User-Agent", "Mozilla/5.0");
+    const MOZILLA_UA_STR: &str = "User-Agent: Mozilla/5.0";
+
     #[test]
     fn test_get_request_no_authorization() {
         let req = request! {
-            "www.example.com" get "/",
-            "User-Agent" => "Mozilla/5.0";
+            HOST get "/",
+            MOZILLA_UA.0 => MOZILLA_UA.1;
         };
         assert_eq!(
             req.to_string(),
-            "GET / HTTP/1.1\nHost: www.example.com\nUser-Agent: Mozilla/5.0\n\n"
+            format!("GET / HTTP/1.1\nHost: {HOST}\n{MOZILLA_UA_STR}\n\n")
         );
     }
 
     #[test]
     fn test_get_request_with_authorization() {
-        let auth = Authorization::Basic(BasicAuthorization::new_encoded("dXNlcjpwYXNzd29yZA=="));
+        let auth = BASIC_AUTH.clone();
         let req = request! {
-            "www.example.com" get "/",
+            HOST get "/",
             authorization auth,
-            "User-Agent" => "Mozilla/5.0";
+            MOZILLA_UA.0 => MOZILLA_UA.1;
         };
         assert_eq!(
             req.to_string(),
-            "GET / HTTP/1.1\nAuthorization: Basic dXNlcjpwYXNzd29yZA==\nHost: www.example.com\nUser-Agent: Mozilla/5.0\n\n"
+            format!(
+                "GET / HTTP/1.1\nAuthorization: {}\nHost: {HOST}\n{MOZILLA_UA_STR}\n\n",
+                BASIC_AUTH.to_string()
+            )
         );
     }
 
@@ -321,13 +332,32 @@ mod test {
     fn test_post_request_no_authorization() {
         let body = Vec::new();
         let req = request! {
-        "www.example.com" post "/test",
+        HOST post "/test",
         body body,
-        "User-Agent" => "Mozilla/5.0";
+        MOZILLA_UA.0 => MOZILLA_UA.1;
         };
         assert_eq!(
             req.to_string(),
-            "POST /test HTTP/1.1\nHost: www.example.com\nUser-Agent: Mozilla/5.0\n\n"
+            format!("POST /test HTTP/1.1\nHost: {HOST}\n{MOZILLA_UA_STR}\n\n")
+        );
+    }
+
+    #[test]
+    fn test_post_request_with_authorization() {
+        let body = Vec::new();
+        let auth = BASIC_AUTH.clone();
+        let req = request! {
+        HOST post "/test",
+        authorization auth,
+        body body,
+        MOZILLA_UA.0 => MOZILLA_UA.1;
+        };
+        assert_eq!(
+            req.to_string(),
+            format!(
+                "POST /test HTTP/1.1\nAuthorization: {}\nHost: {HOST}\n{MOZILLA_UA_STR}\n\n",
+                BASIC_AUTH.to_string()
+            )
         );
     }
 
@@ -338,19 +368,22 @@ mod test {
         // no content-type
         let req = _request! {
             http_version HttpVersion::V1_1,
-            host "www.example.com",
+            host HOST,
             path "/",
             method Method::Get,
             auth Authorization::None,
             body Vec::new(),
         };
 
-        assert_eq!(req.to_string(), "GET / HTTP/1.1\nHost: www.example.com\n\n");
+        assert_eq!(
+            req.to_string(),
+            format!("GET / HTTP/1.1\nHost: {HOST}\n\n",)
+        );
 
         // content-type
         let req = _request! {
             http_version HttpVersion::V1_1,
-            host "www.example.com",
+            host HOST,
             path "/",
             method Method::Get,
             auth Authorization::None,
@@ -360,7 +393,7 @@ mod test {
 
         assert_eq!(
             req.to_string(),
-            "GET / HTTP/1.1\nHost: www.example.com\nContent-Type: application/json\n\n"
+            format!("GET / HTTP/1.1\nHost: {HOST}\nContent-Type: application/json\n\n",)
         );
     }
 }

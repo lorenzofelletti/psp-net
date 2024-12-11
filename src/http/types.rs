@@ -37,6 +37,7 @@ impl From<(&str, &str)> for BasicAuthorization {
         BasicAuthorization::new(id, password)
     }
 }
+
 impl From<&str> for BasicAuthorization {
     fn from(encoded: &str) -> Self {
         BasicAuthorization::new_encoded(encoded)
