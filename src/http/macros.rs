@@ -232,10 +232,18 @@ macro_rules! parse_response {
     }};
 }
 
+/// Macro creating an empty `Vec<u8>` vector
 #[macro_export]
-#[doc(hidden)]
+macro_rules! empty_body {
+    () => {
+        Vec::<u8>::new()
+    };
+}
+
 /// Internal macro to create a [`crate::http::Request`].
 /// It is not intended to be used directly, but serves as a support to [`request!`] macro.
+#[macro_export]
+#[doc(hidden)]
 macro_rules! _request {
     // no content type
     (
@@ -395,5 +403,13 @@ mod test {
             req.to_string(),
             format!("GET / HTTP/1.1\nHost: {HOST}\nContent-Type: application/json\n\n",)
         );
+    }
+
+    #[test]
+    fn test_empty_body() {
+        let empty_vec: Vec<u8> = Vec::new();
+        let empty_body = empty_body!();
+
+        assert_eq!(empty_vec, empty_body);
     }
 }
