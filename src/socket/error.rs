@@ -21,8 +21,11 @@ pub enum SocketError {
 impl SocketError {
     /// Create a new [`SocketError::ErrnoWithDescription`]
     #[must_use]
-    pub fn new_errno_with_description(errno: i32, description: &str) -> Self {
-        SocketError::ErrnoWithDescription(errno, description.to_owned())
+    pub fn new_errno_with_description<S>(errno: i32, description: S) -> Self
+    where
+        S: Into<String>,
+    {
+        SocketError::ErrnoWithDescription(errno, description.into())
     }
 }
 

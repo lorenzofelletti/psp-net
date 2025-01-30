@@ -1,6 +1,7 @@
 #![allow(clippy::module_name_repetitions)]
 
 use alloc::string::String;
+use psp::sys;
 
 use crate::socket::SocketAddr;
 
@@ -38,7 +39,7 @@ impl SocketOptions {
 ///
 /// This is used by [`TlsSocket`](super::socket::tls::TlsSocket) when used as a
 /// [`EasySocket`](super::traits::io::EasySocket).
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct TlsSocketOptions<'a> {
     /// The seed to use for the RNG
     seed: u64,
@@ -70,15 +71,40 @@ impl<'a> TlsSocketOptions<'a> {
     /// - The max fragment length is not reset
     /// - The certificate and CA are not set.
     #[must_use]
-    pub fn new(seed: u64, server_name: String) -> Self {
+    pub fn new<S>(seed: u64, server_name: S) -> Self
+    where
+        S: Into<String>,
+    {
         Self {
             seed,
-            server_name,
+            server_name: server_name.into(),
             cert: None,
             ca: None,
             enable_rsa_signatures: true,
             reset_max_fragment_length: false,
         }
+    }
+
+    /// Create a new socket options with a seed based on the current time
+    ///
+    /// # Returns
+    /// - A new socket options object
+    ///
+    /// # Notes
+    /// Like [`TlsSocketOptions::new`], but the seed is based on the current time.
+    /// Uses [`sys::sceRtcGetCurrentTick`] to get the current time.
+    #[must_use]
+    pub fn new_with_seed_from_time<S>(server_name: S) -> Self
+    where
+        S: Into<String>,
+    {
+        let seed = unsafe {
+            let mut seed: u64 = 0;
+            sys::sceRtcGetCurrentTick(&mut seed);
+            seed
+        };
+
+        Self::new(seed, server_name)
     }
 
     /// Disable RSA signatures
@@ -100,6 +126,14 @@ impl<'a> TlsSocketOptions<'a> {
     #[must_use]
     pub fn seed(&self) -> u64 {
         self.seed
+    }
+
+    /// Set the seed
+    ///
+    /// # Arguments
+    /// - `seed`: The seed
+    pub fn set_seed(&mut self, seed: u64) {
+        self.seed = seed;
     }
 
     /// Get the server name
@@ -153,5 +187,16 @@ impl<'a> TlsSocketOptions<'a> {
     /// - `enable_rsa_signatures`: Whether RSA signatures should be enabled
     pub fn set_enable_rsa_signatures(&mut self, enable_rsa_signatures: bool) {
         self.enable_rsa_signatures = enable_rsa_signatures;
+    }
+
+    /// Set the server name
+    ///
+    /// # Arguments
+    /// - `server_name`: The server name
+    pub fn set_server_name<S>(&mut self, server_name: S)
+    where
+        S: Into<String>,
+    {
+        self.server_name = server_name.into();
     }
 }
