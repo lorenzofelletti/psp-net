@@ -1,6 +1,6 @@
 use core::fmt::Display;
 
-use alloc::string::String;
+use alloc::{borrow::ToOwned, string::String};
 
 /// An error that can occur with a socket
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -9,11 +9,21 @@ pub enum SocketError {
     UnsupportedAddressFamily,
     /// Socket error with errno
     Errno(i32),
+    /// Socket error with errno and a description
+    ErrnoWithDescription(i32, String),
     /// Other error
     Other(String),
     /// Unknown error
     #[default]
     Unknown,
+}
+
+impl SocketError {
+    /// Create a new [`SocketError::ErrnoWithDescription`]
+    #[must_use]
+    pub fn new_errno_with_description(errno: i32, description: &str) -> Self {
+        SocketError::ErrnoWithDescription(errno, description.to_owned())
+    }
 }
 
 impl Display for SocketError {
