@@ -1,6 +1,6 @@
 use core::fmt::Display;
 
-use alloc::{borrow::ToOwned, string::String};
+use alloc::string::String;
 
 /// An error that can occur with a socket
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
