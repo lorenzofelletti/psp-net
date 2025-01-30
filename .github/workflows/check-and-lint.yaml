@@ -10,7 +10,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  TOOLCHAIN_VERSION: nightly-2024-12-09
+  TOOLCHAIN_VERSION: nightly-2025-01-29
 
 jobs:
   fmt:
