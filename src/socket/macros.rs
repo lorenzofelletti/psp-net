@@ -19,7 +19,7 @@ macro_rules! timestamp {
 /// not a `TlsSocket<'_, Ready>` directly.
 ///
 /// # Parameters
-/// - `name`: The name of the variable where the socket will be stored
+/// - `result`: The name of the variable where the result (socket/error) will be stored
 /// - `host`: The hostname and address to connect to
 /// - `send_flags`: (Optional) The send flags to be used (by the underlying TCP socket)
 /// - `recv_flags`: (Optional) The receive flags to be used (by the underlying TCP socket)
@@ -30,20 +30,20 @@ macro_rules! timestamp {
 /// - `reset_max_fragment_length`: (Optional, default `false`) Whether to reset the max fragment length
 ///
 /// # Safety
-/// - The macro will panic if the provided IP address is invalid
+/// - The macro will panic if the provided IP address is invalid (must be a valid IPv4 address)
 ///
 /// # Example
 /// ```no_run
 /// tls_socket! {
-///     name: tls_socket,
+///     result: maybe_socket,
 ///     host "myhost.com" => "1.2.3.4",
 /// }
-/// let mut tls_socket = tls_socket?;
+/// let mut tls_socket = maybe_socket?;
 /// tls_socket.write_all("hello world".as_bytes());
 /// ```
 macro_rules! tls_socket {
     (
-        name: $name:ident,
+        result: $result:ident,
         host $host:expr => $remote:expr,
         send_flags $send_flags:expr,
         recv_flags $recv_flags:expr,
@@ -63,7 +63,7 @@ macro_rules! tls_socket {
         use $crate::traits::io::Open;
         use $crate::socket::{error::SocketError, SocketAddr, SocketAddrV4};
 
-        let mut $name: Result<TlsSocket<Ready>, SocketError> = Err(SocketError::Unknown);
+        let mut $result: Result<TlsSocket<Ready>, SocketError> = Err(SocketError::Unknown);
 
         let ip = Ipv4Addr::from_str($remote).unwrap();
         let addr = SocketAddr::V4(SocketAddrV4::new(ip, 443));
@@ -80,24 +80,24 @@ macro_rules! tls_socket {
             if let Ok(s) = s {
                 let mut read_buf = TlsSocket::new_buffer();
                 let mut write_buf = TlsSocket::new_buffer();
-                $name = TlsSocket::new(s, &mut read_buf, &mut write_buf);
+                $result = TlsSocket::new(s, &mut read_buf, &mut write_buf);
                 let mut options = TlsSocketOptions::new($seed, $host.to_string());
                 options.set_cert($cert);
                 options.set_ca($ca);
                 options.set_enable_rsa_signatures($enable_rsa_signatures);
                 options.set_reset_max_fragment_length($mfl);
-                $name = $name.open(&options);
+                $result = $result.open(&options);
             } else {
-                $name = Err(SocketError::Other(
+                $result = Err(SocketError::Other(
                     format!("Failed to connect to {}: {}", $host, s.err().unwrap())));
             }
         } else {
-            $name = Err(SocketError::Other(
+            $result = Err(SocketError::Other(
                 format!("Failed to create socket: {}", s.err().unwrap())));
         }
     };
     (
-        name: $name:ident,
+        result: $result:ident,
         host $host:expr => $remote:expr,
         $(send_flags $send_flags:expr,)?
         $(recv_flags $recv_flags:expr,)?
@@ -121,7 +121,7 @@ macro_rules! tls_socket {
         let recv_flags = $crate::some_or_none!($($recv_flags)?);
 
         tls_socket! {
-            name: $name,
+            result: $result,
             host $host => $remote,
             send_flags send_flags,
             recv_flags recv_flags,
@@ -133,7 +133,7 @@ macro_rules! tls_socket {
         }
     };
     (
-        name: $name:ident,
+        result: $result:ident,
         host $host:expr => $remote:expr,
         $(send_flags $send_flags:expr,)?
         $(recv_flags $recv_flags:expr,)?
@@ -142,7 +142,7 @@ macro_rules! tls_socket {
         let send_flags = $crate::some_or_none!($($send_flags)?);
         let recv_flags = $crate::some_or_none!($($recv_flags)?);
         tls_socket! {
-            name: $name,
+            result: $result,
             host $host => $remote,
             send_flags send_flags,
             recv_flags recv_flags,
