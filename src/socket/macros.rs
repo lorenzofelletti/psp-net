@@ -80,13 +80,13 @@ macro_rules! tls_socket {
             if let Ok(s) = s {
                 let mut read_buf = TlsSocket::new_buffer();
                 let mut write_buf = TlsSocket::new_buffer();
-                let $name = TlsSocket::new(s, &mut read_buf, &mut write_buf);
+                $name = TlsSocket::new(s, &mut read_buf, &mut write_buf);
                 let mut options = TlsSocketOptions::new($seed, $host.to_string());
                 options.set_cert($cert);
                 options.set_ca($ca);
                 options.set_enable_rsa_signatures($enable_rsa_signatures);
                 options.set_reset_max_fragment_length($mfl);
-                let $name = $name.open(&options);
+                $name = $name.open(&options);
             } else {
                 $name = Err(SocketError::Other(
                     format!("Failed to connect to {}: {}", $host, s.err().unwrap())));
