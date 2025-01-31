@@ -72,7 +72,7 @@ impl TcpSocket {
         if fd < 0 {
             Err(SocketError::new_errno_with_description(
                 unsafe { sys::sceNetInetGetErrno() },
-                "Failed to create socket",
+                "failed to create socket",
             ))
         } else {
             let fd = SocketFileDescriptor::new(fd);

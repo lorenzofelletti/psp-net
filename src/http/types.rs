@@ -1,4 +1,4 @@
-use alloc::{borrow::ToOwned, format, string::String};
+use alloc::{format, string::String};
 use base64::Engine;
 use core::fmt;
 
@@ -18,8 +18,11 @@ impl BasicAuthorization {
     /// In particular, it returns a [`BasicAuthorization::IdPassword`] variant
     /// of the [`BasicAuthorization`] enum.
     #[must_use]
-    pub fn new(id: &str, password: &str) -> Self {
-        BasicAuthorization::IdPassword(id.to_owned(), password.to_owned())
+    pub fn new<S>(id: S, password: S) -> Self
+    where
+        S: Into<String>,
+    {
+        BasicAuthorization::IdPassword(id.into(), password.into())
     }
 
     /// Create a new basic authorization using the already encoded string
@@ -27,32 +30,17 @@ impl BasicAuthorization {
     /// In particular, it returns a [`BasicAuthorization::Encoded`] variant
     /// of the [`BasicAuthorization`] enum.
     #[must_use]
-    pub fn new_encoded(encoded: &str) -> Self {
-        BasicAuthorization::Encoded(encoded.to_owned())
+    pub fn new_encoded<S>(encoded: S) -> Self
+    where
+        S: Into<String>,
+    {
+        BasicAuthorization::Encoded(encoded.into())
     }
 }
 
-impl From<(&str, &str)> for BasicAuthorization {
-    fn from((id, password): (&str, &str)) -> Self {
-        BasicAuthorization::new(id, password)
-    }
-}
-
-impl From<&str> for BasicAuthorization {
-    fn from(encoded: &str) -> Self {
-        BasicAuthorization::new_encoded(encoded)
-    }
-}
-
-impl From<String> for BasicAuthorization {
-    fn from(encoded: String) -> Self {
-        BasicAuthorization::new_encoded(&encoded)
-    }
-}
-
-impl From<(String, String)> for BasicAuthorization {
-    fn from((id, password): (String, String)) -> Self {
-        BasicAuthorization::new(&id, &password)
+impl<S: Into<String>> From<S> for BasicAuthorization {
+    fn from(id: S) -> Self {
+        BasicAuthorization::new_encoded(id)
     }
 }
 
