@@ -16,6 +16,7 @@ use crate::{
 };
 
 use super::{
+    error::TlsSocketError,
     state::{Connected, NotReady, Ready, SocketState},
     tcp::TcpSocket,
 };
@@ -117,9 +118,9 @@ impl TlsSocket<'_, Ready> {
     /// - `Err(TlsError)` if the write was unsuccessful.
     ///
     /// # Errors
-    /// [`embedded_tls::TlsError`] if the write fails.
-    pub fn write_all(&mut self, buf: &[u8]) -> Result<(), embedded_tls::TlsError> {
-        self.tls_connection.write_all(buf)
+    /// [`TlsSocketError`] if the write fails.
+    pub fn write_all(&mut self, buf: &[u8]) -> Result<(), TlsSocketError> {
+        self.tls_connection.write_all(buf).map_err(Into::into)
     }
 
     /// Read data from the TLS connection and converts it to a [`String`].
@@ -129,8 +130,8 @@ impl TlsSocket<'_, Ready> {
     /// - `Err(TlsError)` if the read was unsuccessful.
     ///
     /// # Errors
-    /// [`embedded_tls::TlsError`] if the read fails.
-    pub fn read_string(&mut self) -> Result<String, embedded_tls::TlsError> {
+    /// [`TlsSocketError`] if the read fails.
+    pub fn read_string(&mut self) -> Result<String, TlsSocketError> {
         let mut buf = TlsSocket::new_buffer();
         let _ = self.read(&mut buf)?;
 
@@ -142,7 +143,7 @@ impl TlsSocket<'_, Ready> {
 
 impl<S: SocketState> ErrorType for TlsSocket<'_, S> {
     /// The error type for the TLS socket.
-    type Error = embedded_tls::TlsError;
+    type Error = TlsSocketError;
 }
 
 impl<S: SocketState> OptionType for TlsSocket<'_, S> {
@@ -172,7 +173,7 @@ where
     /// # Notes
     /// The function takes ownership of the socket ([`TcpSocket<NotReady>`]), and returns a new socket of type [`TlsSocket<Ready>`].
     /// Therefore, you must assign the returned socket to a variable in order to use it.
-    fn open(self, options: &'b Self::Options<'_>) -> Result<Self::Return, embedded_tls::TlsError>
+    fn open(self, options: &'b Self::Options<'_>) -> Result<Self::Return, TlsSocketError>
     where
         'b: 'a,
     {
@@ -223,7 +224,7 @@ impl embedded_io::Read for TlsSocket<'_, Ready> {
     /// - `Ok(usize)` if the read was successful. The number of bytes read
     /// - `Err(SocketError)` if the read was unsuccessful.
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
-        self.tls_connection.read(buf)
+        self.tls_connection.read(buf).map_err(Into::into)
     }
 }
 
@@ -237,12 +238,12 @@ impl embedded_io::Write for TlsSocket<'_, Ready> {
     /// - `Ok(usize)` if the write was successful. The number of bytes written
     /// - `Err(SocketError)` if the write was unsuccessful.
     fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
-        self.tls_connection.write(buf)
+        self.tls_connection.write(buf).map_err(Into::into)
     }
 
     /// Flush the TLS connection.
     fn flush(&mut self) -> Result<(), Self::Error> {
-        self.tls_connection.flush()
+        self.tls_connection.flush().map_err(Into::into)
     }
 }
 
