@@ -1,5 +1,4 @@
 use alloc::string::String;
-use embedded_tls::TlsError;
 use thiserror::Error;
 
 /// An error that can occur with a socket
@@ -87,3 +86,6 @@ impl embedded_io::Error for TlsSocketError {
         }
     }
 }
+
+// re-exports
+pub type TlsError = embedded_tls::TlsError;
