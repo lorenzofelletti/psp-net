@@ -1,6 +1,6 @@
 [package]
 name = "psp-net"
-version = "0.6.4"
+version = "0.6.5"
 edition = "2021"
 license-file = "LICENSE"
 keywords = ["psp", "net", "networking", "embedded", "gamedev"]
@@ -19,7 +19,7 @@ psp = ["dep:psp"]
 [dependencies]
 psp = { version = "0.3.11", optional = true}
 dns-protocol = { version = "0.1.1", default-features = false }
-embedded-tls = { version = "0.17.0", default-features = false }
+embedded-tls = { version = "0.17.0", default-features = false, features = ["defmt"]}
 embedded-io = { version = "0.6.1", default-features = false }
 rand = { version = "0.8.5", default-features = false }
 rand_chacha = { version = "0.3.1", default-features = false }
@@ -30,3 +30,4 @@ lazy_static = { version = "1.5.0", default-features = false, features = [
 bitflags = { version = "2.8.0", default-features = false }
 httparse = { version = "1.10.0", default-features = false, optional = true }
 base64 = {version = "0.22", default-features = false, features = ["alloc"] }
+thiserror = { version = "2.0.11", default-features = false }
