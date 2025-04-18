@@ -48,14 +48,16 @@ impl embedded_io::Error for SocketError {
 /// underlying socket.
 #[derive(Debug, Clone, Error)]
 pub enum TlsSocketError {
+    /// TLS error
     #[error("TLS error: {}", 0)]
     TlsError(TlsError),
+    /// An error with the under
     #[error("Socket error: {0}")]
     SocketError(#[from] SocketError),
 }
 
 impl TlsSocketError {
-    /// Returns `true` if the tls socket error is [`TlsError`].
+    /// Returns `true` if the error is a [`TlsError`].
     ///
     /// [`TlsError`]: TlsSocketError::TlsError
     #[must_use]
@@ -63,7 +65,7 @@ impl TlsSocketError {
         matches!(self, Self::TlsError(..))
     }
 
-    /// Returns `true` if the tls socket error is [`SocketError`].
+    /// Returns `true` if the error is a [`SocketError`].
     ///
     /// [`SocketError`]: TlsSocketError::SocketError
     #[must_use]
