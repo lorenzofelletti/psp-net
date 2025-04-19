@@ -1,18 +1,24 @@
 use alloc::{borrow::ToOwned, string::String};
+use thiserror::Error;
 
 /// Error type for net functions
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
 #[must_use]
 pub enum NetError {
     /// Failed to load a net module
+    #[error("Failed to load module {}: {}", 0, 1)]
     LoadModuleFailed(String, i32),
     /// Failed to initialize
+    #[error("Failed to initialize {}: {}", 0, 1)]
     InitFailed(String, i32),
     /// An error occurred when using a net function
+    #[error("{}: {}", 0, 1)]
     Error(String, i32),
     /// Net config Do not exist
+    #[error("Net config does not exist")]
     NetConfigNotExist,
     /// Timeout
+    #[error("Timeout")]
     Timeout,
 }
 
