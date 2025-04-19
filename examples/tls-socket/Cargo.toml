@@ -1,0 +1,9 @@
+[package]
+name = "tls-socket"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+psp = "0.3.12"
+psp-net ={ path = "../../", features = ["macros"] }
+
