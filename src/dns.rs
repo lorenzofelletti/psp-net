@@ -9,6 +9,7 @@ use core::net::{IpAddr, Ipv4Addr, SocketAddr};
 use dns_protocol::{Flags, Question, ResourceRecord};
 use embedded_io::{Read, Write};
 use psp::sys::in_addr;
+use thiserror::Error;
 
 use crate::socket::state::Connected;
 
@@ -30,13 +31,16 @@ pub fn create_a_type_query(domain: &str) -> Question {
 }
 
 /// An error that can occur when using a DNS resolver
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum DnsError {
     /// The DNS resolver failed to create
+    #[error("Failed to create DNS resolver: {}", 0)]
     FailedToCreate(String),
     /// The hostname could not be resolved
+    #[error("Hostname resolution failed: {}", 0)]
     HostnameResolutionFailed(String),
     /// The IP address could not be resolved
+    #[error("Address resolution failed: {}", 0)]
     AddressResolutionFailed(String),
 }
 
