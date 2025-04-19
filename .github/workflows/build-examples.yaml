@@ -1,0 +1,37 @@
+name: Build Examples
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+env:
+  CARGO_TERM_COLOR: always
+  TOOLCHAIN_VERSION: nightly-2025-04-17
+
+jobs:
+  test:
+    name: Build examples
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ env.TOOLCHAIN_VERSION }}
+          override: true
+      
+      - name: Install cargo-psp
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: cargo-psp
+      
+      - name: Build examples
+        run: make build-examples
