@@ -66,7 +66,6 @@ impl TcpSocket {
     ///
     /// # Errors
     /// - [`SocketError::ErrnoWithDescription`] if the socket could not be created
-    #[allow(dead_code)]
     pub fn new() -> Result<TcpSocket<Unbound>, SocketError> {
         let fd = unsafe { sys::sceNetInetSocket(i32::from(netc::AF_INET), netc::SOCK_STREAM, 0) };
         if fd < 0 {
