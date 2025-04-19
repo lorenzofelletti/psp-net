@@ -35,10 +35,10 @@ macro_rules! timestamp {
 /// # Example
 /// ```no_run
 /// tls_socket! {
-///     result: maybe_socket,
+///     result: _maybe_socket,
 ///     host "myhost.com" => "1.2.3.4",
 /// }
-/// let mut tls_socket = maybe_socket?;
+/// let mut tls_socket = _maybe_socket?;
 /// tls_socket.write_all("hello world".as_bytes());
 /// ```
 macro_rules! tls_socket {
@@ -61,39 +61,44 @@ macro_rules! tls_socket {
         use $crate::socket::tcp::TcpSocket;
         use $crate::socket::tls::TlsSocket;
         use $crate::traits::io::Open;
-        use $crate::socket::{error::SocketError, SocketAddr, SocketAddrV4};
+        use $crate::socket::{SocketAddr, SocketAddrV4};
+        use $crate::socket::error::{SocketError, TlsSocketError};
 
-        let mut $result: Result<TlsSocket<Ready>, SocketError> = Err(SocketError::Unknown);
+        let mut read_buf = TlsSocket::new_buffer();
+        let mut write_buf = TlsSocket::new_buffer();
+        let mut options = TlsSocketOptions::new($seed, $host.to_string());
+        let mut $result: Result<TlsSocket<Ready>, TlsSocketError> = Err(SocketError::Unknown.into());
 
         let ip = Ipv4Addr::from_str($remote).unwrap();
         let addr = SocketAddr::V4(SocketAddrV4::new(ip, 443));
         let s = TcpSocket::new();
 
-        if let Ok(mut s) = s {
-            if let Some(send_flags) = $send_flags {
-                s.set_send_flags(send_flags);
+        match s {
+            Ok(mut s) => {
+                if let Some(send_flags) = $send_flags {
+                    s.set_send_flags(send_flags);
+                }
+                if let Some(recv_flags) = $recv_flags {
+                    s.set_recv_flags(recv_flags);
+                }
+                let s = s.connect(addr);
+                match s {
+                    Ok(s) => {
+                        let tls_sock = TlsSocket::new(s, &mut read_buf, &mut write_buf);
+                    options.set_cert($cert);
+                    options.set_ca($ca);
+                    options.set_enable_rsa_signatures($enable_rsa_signatures);
+                    options.set_reset_max_fragment_length($mfl);
+                    $result = tls_sock.open(&options).map_err(|e| e.into());
+                    }
+                    Err(e) => {
+                        $result = Err(e.into());
+                    }
+                }
             }
-            if let Some(recv_flags) = $recv_flags {
-                s.set_recv_flags(recv_flags);
+            Err(e) => {
+                $result = Err(e.into());
             }
-            let s = s.connect(addr);
-            if let Ok(s) = s {
-                let mut read_buf = TlsSocket::new_buffer();
-                let mut write_buf = TlsSocket::new_buffer();
-                $result = TlsSocket::new(s, &mut read_buf, &mut write_buf);
-                let mut options = TlsSocketOptions::new($seed, $host.to_string());
-                options.set_cert($cert);
-                options.set_ca($ca);
-                options.set_enable_rsa_signatures($enable_rsa_signatures);
-                options.set_reset_max_fragment_length($mfl);
-                $result = $result.open(&options);
-            } else {
-                $result = Err(SocketError::Other(
-                    format!("Failed to connect to {}: {}", $host, s.err().unwrap())));
-            }
-        } else {
-            $result = Err(SocketError::Other(
-                format!("Failed to create socket: {}", s.err().unwrap())));
         }
     };
     (
