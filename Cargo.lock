@@ -499,7 +499,7 @@ dependencies = [
 
 [[package]]
 name = "psp-net"
-version = "0.6.5"
+version = "0.6.6"
 dependencies = [
  "base64",
  "bitflags",
