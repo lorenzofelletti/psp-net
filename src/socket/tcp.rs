@@ -148,7 +148,7 @@ impl TcpSocket<Unbound> {
                 if unsafe {
                     sys::sceNetInetConnect(
                         *self.fd,
-                        &sockaddr,
+                        &raw const sockaddr,
                         core::mem::size_of::<netc::sockaddr_in>() as u32,
                     )
                 } < 0

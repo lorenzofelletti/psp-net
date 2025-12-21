@@ -175,7 +175,7 @@ pub fn block_until_connected(desist_after: usize) -> Result<(), NetError> {
     let mut state: psp::sys::ApctlState = unsafe { core::mem::zeroed() };
     for _ in 0..desist_after {
         unsafe {
-            let err = psp::sys::sceNetApctlGetState(&mut state);
+            let err = psp::sys::sceNetApctlGetState(&raw mut state);
             if err != 0 {
                 return Err(NetError::error("sceNetApctlGetState", err));
             }

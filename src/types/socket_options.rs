@@ -100,7 +100,7 @@ impl<'a> TlsSocketOptions<'a> {
     {
         let seed = unsafe {
             let mut seed: u64 = 0;
-            sys::sceRtcGetCurrentTick(&mut seed);
+            sys::sceRtcGetCurrentTick(&raw mut seed);
             seed
         };
 

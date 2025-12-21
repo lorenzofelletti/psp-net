@@ -26,7 +26,7 @@ lazy_static::lazy_static! {
 /// Create a DNS query for an A record
 #[allow(unused)]
 #[must_use]
-pub fn create_a_type_query(domain: &str) -> Question {
+pub fn create_a_type_query(domain: &str) -> Question<'_> {
     Question::new(domain, dns_protocol::ResourceType::A, 1)
 }
 

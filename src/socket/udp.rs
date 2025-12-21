@@ -145,7 +145,7 @@ impl UdpSocket<Unbound> {
     /// - [`SocketError::Errno`] if the binding was unsuccessful
     #[allow(unused)]
     pub fn bind(mut self, addr: Option<SocketAddr>) -> Result<UdpSocket<Bound>, SocketError> {
-        let default_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), 0);
+        let default_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0);
         let addr = addr.unwrap_or(default_addr);
         match addr {
             SocketAddr::V4(v4) => {
@@ -154,7 +154,7 @@ impl UdpSocket<Unbound> {
                 if unsafe {
                     sys::sceNetInetBind(
                         *self.fd,
-                        &sockaddr,
+                        &raw const sockaddr,
                         core::mem::size_of::<netc::sockaddr>() as u32,
                     )
                 } != 0
@@ -201,7 +201,10 @@ impl UdpSocket<Bound> {
             SocketAddr::V4(v4) => {
                 let sockaddr = v4.to_sockaddr();
 
-                if unsafe { sys::sceNetInetConnect(*self.fd, &sockaddr, Self::socket_len()) } != 0 {
+                if unsafe {
+                    sys::sceNetInetConnect(*self.fd, &raw const sockaddr, Self::socket_len())
+                } != 0
+                {
                     let errno = unsafe { sys::sceNetInetGetErrno() };
                     Err(SocketError::Errno(errno))
                 } else {
@@ -237,7 +240,7 @@ impl UdpSocket<Bound> {
                 buf.as_mut_ptr().cast::<c_void>(),
                 buf.len(),
                 self.recv_flags.as_i32(),
-                &mut sockaddr,
+                &raw mut sockaddr,
                 &mut Self::socket_len(),
             )
         };
@@ -282,7 +285,7 @@ impl UdpSocket<Bound> {
                 buf.as_ptr().cast::<c_void>(),
                 len,
                 self.send_flags.as_i32(),
-                &sockaddr,
+                &raw const sockaddr,
                 socklen,
             )
         };

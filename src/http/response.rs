@@ -2,6 +2,7 @@ use alloc::{string::String, vec::Vec};
 
 use super::HttpVersion;
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Response {
     pub http_version: HttpVersion,
